@@ -1,8 +1,9 @@
-import { db } from '@/db'
-import { recipe, RecipeInsert } from '@/db/schema'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import type { RecipeInsert } from '@/db/schema'
+import { db } from '@/db'
+import { recipe } from '@/db/schema'
 
 export const Route = createFileRoute('/recipes/create')({
   component: RouteComponent,
