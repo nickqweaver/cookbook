@@ -3,7 +3,17 @@ import { useForm } from '@tanstack/react-form'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
-import { Calendar, ChefHat, Clock, Plus, Users, X } from 'lucide-react'
+import {
+  Calendar,
+  ChefHat,
+  Clock,
+  Plus,
+  Users,
+  X,
+  Pencil,
+  Trash2,
+  Check,
+} from 'lucide-react'
 import type {
   Ingredient,
   IngredientInput,
@@ -139,6 +149,9 @@ function RouteComponent() {
   const router = useRouter()
   const [showIngredientForm, setShowIngredientForm] = useState(false)
   const [customUnit, setCustomUnit] = useState(false)
+  const [editingIngredientId, setEditingIngredientId] = useState<number | null>(
+    null,
+  )
 
   if (!data.success) {
     return <div>{data.message}</div>
@@ -346,22 +359,93 @@ function RouteComponent() {
 
         {ingredients.length > 0 ? (
           <ul className="space-y-3">
-            {ingredients.map((ingredient) => (
-              <li
-                key={ingredient.id}
-                className="text-muted-foreground flex items-baseline gap-3 text-lg"
-              >
-                <span className="text-foreground text-xl">•</span>
-                <span>
-                  {ingredient.amount && ingredient.unit && (
-                    <span className="text-foreground font-medium">
-                      {ingredient.amount} {ingredient.unit}{' '}
-                    </span>
+            {ingredients.map((ingredient) => {
+              const isEditing = editingIngredientId === ingredient.id
+
+              return (
+                <li
+                  key={ingredient.id}
+                  className="group flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                >
+                  {isEditing ? (
+                    <div className="flex flex-1 items-center gap-3">
+                      <Input
+                        defaultValue={ingredient.name}
+                        placeholder="Ingredient name"
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        defaultValue={ingredient.amount ?? 0}
+                        placeholder="Amount"
+                        step="0.01"
+                        className="w-24"
+                      />
+                      <Input
+                        defaultValue={ingredient.unit ?? ''}
+                        placeholder="Unit"
+                        className="w-24"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 shrink-0"
+                          onClick={() => {
+                            // Save logic will go here
+                            setEditingIngredientId(null)
+                          }}
+                        >
+                          <Check className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 shrink-0"
+                          onClick={() => setEditingIngredientId(null)}
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <span className="text-foreground text-lg">
+                          {ingredient.amount && ingredient.unit && (
+                            <span className="font-semibold">
+                              {ingredient.amount} {ingredient.unit}{' '}
+                            </span>
+                          )}
+                          {ingredient.name}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 shrink-0"
+                          onClick={() => setEditingIngredientId(ingredient.id)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 shrink-0 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            // Delete logic will go here
+                            console.log('Delete ingredient', ingredient.id)
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </>
                   )}
-                  {ingredient.name}
-                </span>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         ) : (
           <p className="text-muted-foreground text-base">
