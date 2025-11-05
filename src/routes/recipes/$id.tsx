@@ -18,6 +18,7 @@ import type {
   Ingredient,
   IngredientInput,
   Instruction,
+  InstructionInput,
   Recipe,
 } from '@/db/schema'
 import { db } from '@/db'
@@ -117,6 +118,26 @@ const addIngredient = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     try {
       const [insert] = await db.insert(ingredient).values(data).returning()
+
+      return {
+        success: true,
+        data: insert,
+      }
+    } catch (err) {
+      console.error(err)
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to retrieve recipe',
+      }
+    }
+  })
+
+const addInsruction = createServerFn({ method: 'POST' })
+  .inputValidator((data: InstructionInput) => data)
+  .handler(async ({ data }) => {
+    try {
+      const [insert] = await db.insert(instruction).values(data).returning()
 
       return {
         success: true,
