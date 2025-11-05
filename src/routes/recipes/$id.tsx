@@ -279,14 +279,17 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
     unit: '',
   }
 
+  const add = useServerFn(addIngredient)
+  const mutation = useMutation(add)
+
   const ingredientForm = useForm({
     defaultValues: defaultIngredient,
     onSubmit: async ({ value }) => {
-      const result = await addIngredient({
+      const result = await mutation.mutate({
         data: { ...value, recipe: recipeId },
       })
 
-      if (result.success) {
+      if (result?.success) {
         setShowIngredientForm(false)
         setCustomUnit(false)
         ingredientForm.reset()
@@ -423,7 +426,9 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Add Ingredient</Button>
+                <Button type="submit" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Adding...' : 'Add Ingredient'}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
