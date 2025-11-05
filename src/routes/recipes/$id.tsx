@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
@@ -14,6 +14,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { Ingredients } from './_ingredients/ingredients'
 import type {
   Ingredient,
   IngredientInput,
@@ -26,13 +27,6 @@ import { ingredient, instruction, recipe } from '@/db/schema'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -173,22 +167,6 @@ export const Route = createFileRoute('/recipes/$id')({
   loader: async (args) => await getRecipe({ data: args.params.id }),
 })
 
-const COMMON_UNITS = [
-  'cup',
-  'cups',
-  'tbsp',
-  'tsp',
-  'oz',
-  'lb',
-  'g',
-  'kg',
-  'ml',
-  'l',
-  'pinch',
-  'whole',
-  'other',
-]
-
 type RecipeHeaderProps = {
   recipe: Recipe
 }
@@ -254,313 +232,6 @@ function RecipeHeader({ recipe }: RecipeHeaderProps) {
         </span>
       </div>
     </>
-  )
-}
-
-type IngredientsProps = {
-  ingredients: Array<Ingredient>
-  recipeId: number
-}
-
-function Ingredients({ ingredients, recipeId }: IngredientsProps) {
-  const router = useRouter()
-  const [showIngredientForm, setShowIngredientForm] = useState(false)
-  const [customUnit, setCustomUnit] = useState(false)
-  const [editingIngredientId, setEditingIngredientId] = useState<number | null>(
-    null,
-  )
-  const [deletingIngredientId, setDeletingIngredientId] = useState<
-    number | null
-  >(null)
-
-  const defaultIngredient: Omit<IngredientInput, 'recipe'> = {
-    name: '',
-    amount: 0,
-    unit: '',
-  }
-
-  const add = useServerFn(addIngredient)
-  const mutation = useMutation(add)
-
-  const ingredientForm = useForm({
-    defaultValues: defaultIngredient,
-    onSubmit: async ({ value }) => {
-      const result = await mutation.mutate({
-        data: { ...value, recipe: recipeId },
-      })
-
-      if (result?.success) {
-        setShowIngredientForm(false)
-        setCustomUnit(false)
-        ingredientForm.reset()
-        router.invalidate()
-      }
-    },
-  })
-
-  return (
-    <section className="mb-12 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-semibold tracking-tight">Ingredients</h2>
-        <Dialog open={showIngredientForm} onOpenChange={setShowIngredientForm}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Plus className="mr-2 size-4" />
-              Add Ingredient
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Ingredient</DialogTitle>
-              <DialogDescription>
-                Add a new ingredient to your recipe
-              </DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                ingredientForm.handleSubmit()
-              }}
-              className="space-y-4"
-            >
-              <ingredientForm.Field
-                name="name"
-                children={(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Ingredient Name</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="e.g., Flour"
-                    />
-                  </div>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ingredientForm.Field
-                  name="amount"
-                  children={(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Amount</Label>
-                      <Input
-                        id={field.name}
-                        type="number"
-                        name={field.name}
-                        value={field.state.value}
-                        onChange={(e) =>
-                          field.handleChange(e.target.valueAsNumber)
-                        }
-                        placeholder="2"
-                        step="0.01"
-                      />
-                    </div>
-                  )}
-                />
-
-                <ingredientForm.Field
-                  name="unit"
-                  children={(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Unit</Label>
-                      {customUnit ? (
-                        <div className="flex gap-2">
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onChange={(e) => field.handleChange(e.target.value)}
-                            placeholder="e.g., cans"
-                            autoFocus
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              setCustomUnit(false)
-                              field.handleChange('')
-                            }}
-                            title="Back to common units"
-                          >
-                            <X className="size-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Select
-                          value={field.state.value}
-                          onValueChange={(value) => {
-                            if (value === 'other') {
-                              setCustomUnit(true)
-                              field.handleChange('')
-                            } else {
-                              field.handleChange(value)
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {COMMON_UNITS.map((unit) => (
-                              <SelectItem key={unit} value={unit}>
-                                {unit}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowIngredientForm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? 'Adding...' : 'Add Ingredient'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {ingredients.length > 0 ? (
-        <ul className="space-y-3">
-          {ingredients.map((ingredient) => {
-            const isEditing = editingIngredientId === ingredient.id
-
-            return (
-              <li
-                key={ingredient.id}
-                className="group flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
-              >
-                {isEditing ? (
-                  <div className="flex flex-1 items-center gap-3">
-                    <Input
-                      defaultValue={ingredient.name}
-                      placeholder="Ingredient name"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      defaultValue={ingredient.amount}
-                      placeholder="Amount"
-                      step="0.01"
-                      className="w-24"
-                    />
-                    <Input
-                      defaultValue={ingredient.unit}
-                      placeholder="Unit"
-                      className="w-24"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        onClick={() => {
-                          // Save logic will go here
-                          setEditingIngredientId(null)
-                        }}
-                      >
-                        <Check className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        onClick={() => setEditingIngredientId(null)}
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1">
-                      <span className="text-foreground text-lg">
-                        {ingredient.amount && ingredient.unit && (
-                          <span className="font-semibold">
-                            {ingredient.amount} {ingredient.unit}{' '}
-                          </span>
-                        )}
-                        {ingredient.name}
-                      </span>
-                    </div>
-                    <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        onClick={() => setEditingIngredientId(ingredient.id)}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => setDeletingIngredientId(ingredient.id)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className="text-muted-foreground text-base">
-          No ingredients added yet
-        </p>
-      )}
-
-      <Dialog
-        open={deletingIngredientId !== null}
-        onOpenChange={(open) => !open && setDeletingIngredientId(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Ingredient</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this ingredient? This action
-              cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeletingIngredientId(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                // Delete logic will go here
-                console.log('Delete ingredient', deletingIngredientId)
-                setDeletingIngredientId(null)
-              }}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </section>
   )
 }
 
@@ -828,7 +499,11 @@ function RouteComponent() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <RecipeHeader recipe={recipe} />
-      <Ingredients ingredients={ingredients} recipeId={recipe.id} />
+      <Ingredients
+        ingredients={ingredients}
+        recipeId={recipe.id}
+        addIngredientFn={addIngredient}
+      />
       <Instructions instructions={instructions} recipeId={recipe.id} />
     </div>
   )
