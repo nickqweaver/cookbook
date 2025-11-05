@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
-import { ChefHat, Clock, Users, Calendar, Plus, X } from 'lucide-react'
+import { Calendar, ChefHat, Clock, Plus, Users, X } from 'lucide-react'
 import type {
   Ingredient,
   IngredientInput,
@@ -15,6 +15,13 @@ import { ingredient, instruction, recipe } from '@/db/schema'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const getRecipe = createServerFn({ method: 'GET' })
   .inputValidator((data: string) => {
@@ -111,10 +118,27 @@ export const Route = createFileRoute('/recipes/$id')({
   loader: async (args) => await getRecipe({ data: args.params.id }),
 })
 
+const COMMON_UNITS = [
+  'cup',
+  'cups',
+  'tbsp',
+  'tsp',
+  'oz',
+  'lb',
+  'g',
+  'kg',
+  'ml',
+  'l',
+  'pinch',
+  'whole',
+  'other',
+]
+
 function RouteComponent() {
   const data = Route.useLoaderData()
   const router = useRouter()
   const [showIngredientForm, setShowIngredientForm] = useState(false)
+  const [customUnit, setCustomUnit] = useState(false)
 
   if (!data.success) {
     return <div>{data.message}</div>
@@ -135,6 +159,7 @@ function RouteComponent() {
 
       if (result.success) {
         setShowIngredientForm(false)
+        setCustomUnit(false)
         ingredientForm.reset()
         router.invalidate()
       }
@@ -254,13 +279,53 @@ function RouteComponent() {
                 children={(field) => (
                   <div className="space-y-2">
                     <Label htmlFor={field.name}>Unit</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value ?? ''}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="e.g., cups"
-                    />
+                    {customUnit ? (
+                      <div className="flex gap-2">
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="e.g., cans"
+                          autoFocus
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setCustomUnit(false)
+                            field.handleChange('')
+                          }}
+                          title="Back to common units"
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select
+                        value={field.state.value}
+                        onValueChange={(value) => {
+                          if (value === 'other') {
+                            setCustomUnit(true)
+                            field.handleChange('')
+                          } else {
+                            field.handleChange(value)
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COMMON_UNITS.map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 )}
               />
@@ -326,7 +391,7 @@ function RouteComponent() {
                     {index + 1}
                   </span>
                   <p className="text-foreground flex-1 pt-1 text-lg leading-relaxed">
-                    {instruction.description}
+                    {instruction.content}
                   </p>
                 </li>
               ))}
