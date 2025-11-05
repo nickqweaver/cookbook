@@ -5,14 +5,14 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
 import {
   Calendar,
+  Check,
   ChefHat,
   Clock,
+  Pencil,
   Plus,
+  Trash2,
   Users,
   X,
-  Pencil,
-  Trash2,
-  Check,
 } from 'lucide-react'
 import type {
   Ingredient,
@@ -32,6 +32,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 const getRecipe = createServerFn({ method: 'GET' })
   .inputValidator((data: string) => {
@@ -251,138 +260,136 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
     <section className="mb-12 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-semibold tracking-tight">Ingredients</h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowIngredientForm(!showIngredientForm)}
-        >
-          {showIngredientForm ? (
-            <>
-              <X className="mr-2 size-4" />
-              Cancel
-            </>
-          ) : (
-            <>
+        <Dialog open={showIngredientForm} onOpenChange={setShowIngredientForm}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
               <Plus className="mr-2 size-4" />
               Add Ingredient
-            </>
-          )}
-        </Button>
-      </div>
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Ingredient</DialogTitle>
+              <DialogDescription>
+                Add a new ingredient to your recipe
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                ingredientForm.handleSubmit()
+              }}
+              className="space-y-4"
+            >
+              <ingredientForm.Field
+                name="name"
+                children={(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Ingredient Name</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Flour"
+                    />
+                  </div>
+                )}
+              />
 
-      {showIngredientForm && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            ingredientForm.handleSubmit()
-          }}
-          className="space-y-4 rounded-lg border bg-card p-6"
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <ingredientForm.Field
-              name="name"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Ingredient Name</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="e.g., Flour"
-                  />
-                </div>
-              )}
-            />
-
-            <ingredientForm.Field
-              name="amount"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Amount</Label>
-                  <Input
-                    id={field.name}
-                    type="number"
-                    name={field.name}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.valueAsNumber)}
-                    placeholder="2"
-                    step="0.01"
-                  />
-                </div>
-              )}
-            />
-
-            <ingredientForm.Field
-              name="unit"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Unit</Label>
-                  {customUnit ? (
-                    <div className="flex gap-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ingredientForm.Field
+                  name="amount"
+                  children={(field) => (
+                    <div className="space-y-2">
+                      <Label htmlFor={field.name}>Amount</Label>
                       <Input
                         id={field.name}
+                        type="number"
                         name={field.name}
                         value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="e.g., cans"
-                        autoFocus
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setCustomUnit(false)
-                          field.handleChange('')
-                        }}
-                        title="Back to common units"
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) => {
-                        if (value === 'other') {
-                          setCustomUnit(true)
-                          field.handleChange('')
-                        } else {
-                          field.handleChange(value)
+                        onChange={(e) =>
+                          field.handleChange(e.target.valueAsNumber)
                         }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COMMON_UNITS.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        placeholder="2"
+                        step="0.01"
+                      />
+                    </div>
                   )}
-                </div>
-              )}
-            />
-          </div>
+                />
 
-          <div className="flex gap-3">
-            <Button type="submit">Add Ingredient</Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowIngredientForm(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
+                <ingredientForm.Field
+                  name="unit"
+                  children={(field) => (
+                    <div className="space-y-2">
+                      <Label htmlFor={field.name}>Unit</Label>
+                      {customUnit ? (
+                        <div className="flex gap-2">
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="e.g., cans"
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setCustomUnit(false)
+                              field.handleChange('')
+                            }}
+                            title="Back to common units"
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          value={field.state.value}
+                          onValueChange={(value) => {
+                            if (value === 'other') {
+                              setCustomUnit(true)
+                              field.handleChange('')
+                            } else {
+                              field.handleChange(value)
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COMMON_UNITS.map((unit) => (
+                              <SelectItem key={unit} value={unit}>
+                                {unit}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowIngredientForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Add Ingredient</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {ingredients.length > 0 ? (
         <ul className="space-y-3">
