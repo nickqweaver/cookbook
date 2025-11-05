@@ -2,7 +2,7 @@ import { useForm } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
-import { ChefHat, Clock, Users, Calendar } from 'lucide-react'
+import { ChefHat, Clock, Users, Calendar, Plus } from 'lucide-react'
 import type {
   Ingredient,
   IngredientInput,
@@ -12,6 +12,7 @@ import type {
 import { db } from '@/db'
 import { ingredient, instruction, recipe } from '@/db/schema'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 
 const getRecipe = createServerFn({ method: 'GET' })
   .inputValidator((data: string) => {
@@ -174,7 +175,13 @@ function RouteComponent() {
 
       {/* Ingredients Section */}
       <section className="mb-12 space-y-6">
-        <h2 className="text-3xl font-semibold tracking-tight">Ingredients</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-semibold tracking-tight">Ingredients</h2>
+          <Button variant="outline" size="sm">
+            <Plus className="mr-2 size-4" />
+            Add Ingredient
+          </Button>
+        </div>
         {ingredients.length > 0 ? (
           <ul className="space-y-3">
             {ingredients.map((ingredient) => (
@@ -203,7 +210,15 @@ function RouteComponent() {
 
       {/* Instructions Section */}
       <section className="mb-12 space-y-6">
-        <h2 className="text-3xl font-semibold tracking-tight">Instructions</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-semibold tracking-tight">
+            Instructions
+          </h2>
+          <Button variant="outline" size="sm">
+            <Plus className="mr-2 size-4" />
+            Add Instruction
+          </Button>
+        </div>
         {instructions.length > 0 ? (
           <ol className="space-y-6">
             {instructions
