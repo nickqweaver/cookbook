@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
-import { ChefHat, Clock, Users, Calendar, Plus } from 'lucide-react'
+import { ChefHat, Clock, Users, Calendar, Plus, X } from 'lucide-react'
 import type {
   Ingredient,
   IngredientInput,
@@ -13,6 +14,7 @@ import { db } from '@/db'
 import { ingredient, instruction, recipe } from '@/db/schema'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const getRecipe = createServerFn({ method: 'GET' })
   .inputValidator((data: string) => {
@@ -111,12 +113,14 @@ export const Route = createFileRoute('/recipes/$id')({
 
 function RouteComponent() {
   const data = Route.useLoaderData()
+  const router = useRouter()
+  const [showIngredientForm, setShowIngredientForm] = useState(false)
 
   if (!data.success) {
     return <div>{data.message}</div>
   }
 
-  const defaultIngrediennt: Omit<IngredientInput, 'recipe'> = {
+  const defaultIngredient: Omit<IngredientInput, 'recipe'> = {
     name: '',
     amount: 0,
     unit: '',
@@ -124,13 +128,16 @@ function RouteComponent() {
 
   const { recipe: r, ingredients, instructions } = data.data
 
-  const form = useForm({
-    defaultValues: defaultIngrediennt,
+  const ingredientForm = useForm({
+    defaultValues: defaultIngredient,
     onSubmit: async ({ value }) => {
       const result = await addIngredient({ data: { ...value, recipe: r.id } })
 
-      // Invalidate cache here
-      console.log(result)
+      if (result.success) {
+        setShowIngredientForm(false)
+        ingredientForm.reset()
+        router.invalidate()
+      }
     },
   })
 
@@ -177,11 +184,101 @@ function RouteComponent() {
       <section className="mb-12 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-semibold tracking-tight">Ingredients</h2>
-          <Button variant="outline" size="sm">
-            <Plus className="mr-2 size-4" />
-            Add Ingredient
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowIngredientForm(!showIngredientForm)}
+          >
+            {showIngredientForm ? (
+              <>
+                <X className="mr-2 size-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 size-4" />
+                Add Ingredient
+              </>
+            )}
           </Button>
         </div>
+
+        {showIngredientForm && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              ingredientForm.handleSubmit()
+            }}
+            className="space-y-4 rounded-lg border bg-card p-6"
+          >
+            <div className="grid gap-4 sm:grid-cols-3">
+              <ingredientForm.Field
+                name="name"
+                children={(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Ingredient Name</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Flour"
+                    />
+                  </div>
+                )}
+              />
+
+              <ingredientForm.Field
+                name="amount"
+                children={(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Amount</Label>
+                    <Input
+                      id={field.name}
+                      type="number"
+                      name={field.name}
+                      value={field.state.value}
+                      onChange={(e) =>
+                        field.handleChange(e.target.valueAsNumber)
+                      }
+                      placeholder="2"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+              />
+
+              <ingredientForm.Field
+                name="unit"
+                children={(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Unit</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value ?? ''}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., cups"
+                    />
+                  </div>
+                )}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button type="submit">Add Ingredient</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowIngredientForm(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+
         {ingredients.length > 0 ? (
           <ul className="space-y-3">
             {ingredients.map((ingredient) => (
