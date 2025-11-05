@@ -233,6 +233,9 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
   const [editingIngredientId, setEditingIngredientId] = useState<number | null>(
     null,
   )
+  const [deletingIngredientId, setDeletingIngredientId] = useState<
+    number | null
+  >(null)
 
   const defaultIngredient: Omit<IngredientInput, 'recipe'> = {
     name: '',
@@ -467,10 +470,7 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
                         size="icon"
                         variant="ghost"
                         className="size-8 shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          // Delete logic will go here
-                          console.log('Delete ingredient', ingredient.id)
-                        }}
+                        onClick={() => setDeletingIngredientId(ingredient.id)}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -486,6 +486,39 @@ function Ingredients({ ingredients, recipeId }: IngredientsProps) {
           No ingredients added yet
         </p>
       )}
+
+      <Dialog
+        open={deletingIngredientId !== null}
+        onOpenChange={(open) => !open && setDeletingIngredientId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Ingredient</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this ingredient? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeletingIngredientId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                // Delete logic will go here
+                console.log('Delete ingredient', deletingIngredientId)
+                setDeletingIngredientId(null)
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
