@@ -93,3 +93,7 @@ export const cookIngredient = sqliteTable(
 
 export type RecipeInsert = typeof recipe.$inferInsert
 export type Recipe = typeof recipe.$inferSelect
+export type IngredientInput = typeof ingredient.$inferInsert
+export type Ingredient = typeof ingredient.$inferSelect
+export type InstructionInput = typeof instruction.$inferInsert
+export type Instruction = typeof instruction.$inferSelect
