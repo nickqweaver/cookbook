@@ -1,6 +1,13 @@
 import { useCallback, useState } from 'react'
 
-type Mutation<TData, TVariables> = (v: TVariables) => TData
+type MutationOptions<TData> = {
+  onSuccess?: (data: TData) => void
+  onError?: (err: string) => void
+}
+type Mutation<TData, TVariables> = (
+  v: TVariables,
+  options?: MutationOptions<TData>,
+) => TData
 
 export function useMutation<TData, TVariables = void>(
   cb: Mutation<TData, TVariables>,
@@ -13,16 +20,19 @@ export function useMutation<TData, TVariables = void>(
   const [isError, setIsError] = useState(false)
 
   const mutate = useCallback(
-    async (variables: TVariables) => {
+    async (variables: TVariables, options?: MutationOptions<TData>) => {
       try {
         setIsPending(true)
         const res = await cb(variables)
         setData({ data: res })
+        options?.onSuccess?.(res)
         return res
       } catch (err) {
         console.error(err)
-        setError(err instanceof Error ? err.message : 'Failed')
+        const msg = err instanceof Error ? err.message : 'Failed'
+        setError(msg)
         setIsError(true)
+        options?.onError?.(msg)
       } finally {
         setIsPending(false)
       }
