@@ -50,7 +50,6 @@ const getRecipe = createServerFn({ method: 'GET' })
         ingredients: [],
       }
 
-      // TODO: There is a bug in here if you only have a no ingredients it only pulls in one instruction
       const grouped = rows.reduce<GroupedRecipe>((acc, curr) => {
         if (acc.recipe.id === -1) {
           return {
@@ -60,25 +59,23 @@ const getRecipe = createServerFn({ method: 'GET' })
           }
         }
 
-        if (!acc.ingredients.some((ing) => ing.id === curr.ingredient?.id)) {
-          return {
-            ...acc,
-            ingredients: curr.ingredient
-              ? [...acc.ingredients, curr.ingredient]
-              : acc.ingredients,
-          }
-        }
+        const needsIngredient =
+          curr.ingredient &&
+          !acc.ingredients.some((ing) => ing.id === curr.ingredient?.id)
+        const needsInstruction =
+          curr.instruction &&
+          !acc.instructions.some((ins) => ins.id === curr.instruction?.id)
 
-        if (!acc.instructions.some((ins) => ins.id === curr.instruction?.id)) {
-          return {
-            ...acc,
-            instructions: curr.instruction
-              ? [...acc.instructions, curr.instruction]
-              : acc.instructions,
-          }
-        }
         return {
           ...acc,
+          ingredients:
+            needsIngredient && curr.ingredient
+              ? [...acc.ingredients, curr.ingredient]
+              : acc.ingredients,
+          instructions:
+            needsInstruction && curr.instruction
+              ? [...acc.instructions, curr.instruction]
+              : acc.instructions,
         }
       }, initialGrouped)
 
