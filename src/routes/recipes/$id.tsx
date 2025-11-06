@@ -120,7 +120,6 @@ const addIngredient = createServerFn({ method: 'POST' })
 const addInstruction = createServerFn({ method: 'POST' })
   .inputValidator((data: InstructionInput) => data)
   .handler(async ({ data }) => {
-    await new Promise((res) => setTimeout(res, 2000))
     try {
       const [insert] = await db.insert(instruction).values(data).returning()
 
@@ -134,6 +133,80 @@ const addInstruction = createServerFn({ method: 'POST' })
         success: false,
         message:
           err instanceof Error ? err.message : 'Failed to retrieve recipe',
+      }
+    }
+  })
+
+const editInstruction = createServerFn({ method: 'POST' })
+  .inputValidator((data: Partial<InstructionInput>) => data)
+  .handler(async ({ data }) => {
+    try {
+      await db.update(instruction).set(data)
+
+      return {
+        success: true,
+        updatedFields: Object.keys(data),
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to update instruction',
+      }
+    }
+  })
+
+const editIngredient = createServerFn({ method: 'POST' })
+  .inputValidator((data: Partial<IngredientInput>) => data)
+  .handler(async ({ data }) => {
+    try {
+      await db.update(ingredient).set(data)
+
+      return {
+        success: true,
+        updatedFields: Object.keys(data),
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to update ingredient',
+      }
+    }
+  })
+
+const deleteInstruction = createServerFn({ method: 'POST' })
+  .inputValidator((data: number) => data)
+  .handler(async ({ data }) => {
+    try {
+      await db.delete(instruction).where(eq(instruction.id, data))
+
+      return {
+        success: true,
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to delete ingredient',
+      }
+    }
+  })
+
+const deleteIngredient = createServerFn({ method: 'POST' })
+  .inputValidator((data: number) => data)
+  .handler(async ({ data }) => {
+    try {
+      await db.delete(ingredient).where(eq(ingredient.id, data))
+
+      return {
+        success: true,
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to delete ingredient',
       }
     }
   })
