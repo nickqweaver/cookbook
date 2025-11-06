@@ -1,12 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
+import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
 import { Calendar, ChefHat, Clock, Users } from 'lucide-react'
 import { Ingredients } from './_ingredients/ingredients'
 import { Instructions } from './_instructions/instructions'
 import type {
   Ingredient,
-  IngredientInput,
   Instruction,
   InstructionInput,
   Recipe,
@@ -51,6 +50,7 @@ const getRecipe = createServerFn({ method: 'GET' })
         ingredients: [],
       }
 
+      // TODO: There is a bug in here if you only have a no ingredients it only pulls in one instruction
       const grouped = rows.reduce<GroupedRecipe>((acc, curr) => {
         if (acc.recipe.id === -1) {
           return {
@@ -61,7 +61,6 @@ const getRecipe = createServerFn({ method: 'GET' })
         }
 
         if (!acc.ingredients.some((ing) => ing.id === curr.ingredient?.id)) {
-          console.log(acc.ingredients, curr.ingredient)
           return {
             ...acc,
             ingredients: curr.ingredient
@@ -93,26 +92,6 @@ const getRecipe = createServerFn({ method: 'GET' })
         success: false,
         message:
           err instanceof Error ? err.message : 'Failed to retrieve recipe',
-      }
-    }
-  })
-
-const addIngredient = createServerFn({ method: 'POST' })
-  .inputValidator((data: IngredientInput) => data)
-  .handler(async ({ data }) => {
-    try {
-      const [insert] = await db.insert(ingredient).values(data).returning()
-
-      return {
-        success: true,
-        data: insert,
-      }
-    } catch (err) {
-      console.error(err)
-      return {
-        success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to add ingredient',
       }
     }
   })
@@ -156,48 +135,11 @@ const editInstruction = createServerFn({ method: 'POST' })
     }
   })
 
-const editIngredient = createServerFn({ method: 'POST' })
-  .inputValidator((data: Partial<IngredientInput>) => data)
-  .handler(async ({ data }) => {
-    try {
-      await db.update(ingredient).set(data)
-
-      return {
-        success: true,
-        updatedFields: Object.keys(data),
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to update ingredient',
-      }
-    }
-  })
-
 const deleteInstruction = createServerFn({ method: 'POST' })
   .inputValidator((data: number) => data)
   .handler(async ({ data }) => {
     try {
       await db.delete(instruction).where(eq(instruction.id, data))
-
-      return {
-        success: true,
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to delete ingredient',
-      }
-    }
-  })
-
-const deleteIngredient = createServerFn({ method: 'POST' })
-  .inputValidator((data: number) => data)
-  .handler(async ({ data }) => {
-    try {
-      await db.delete(ingredient).where(eq(ingredient.id, data))
 
       return {
         success: true,
@@ -286,6 +228,7 @@ function RecipeHeader({ recipe }: RecipeHeaderProps) {
 
 function RouteComponent() {
   const data = Route.useLoaderData()
+  const addIns = useServerFn(addInstruction)
 
   if (!data.success) {
     return <div>{data.message}</div>
@@ -296,15 +239,11 @@ function RouteComponent() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <RecipeHeader recipe={recipe} />
-      <Ingredients
-        ingredients={ingredients}
-        recipeId={recipe.id}
-        addIngredientFn={addIngredient}
-      />
+      <Ingredients ingredients={ingredients} recipeId={recipe.id} />
       <Instructions
         instructions={instructions}
         recipeId={recipe.id}
-        addInstructionFn={addInstruction}
+        addInstructionFn={addIns}
       />
     </div>
   )

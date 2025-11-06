@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useRouter } from '@tanstack/react-router'
 import { Plus, X } from 'lucide-react'
-import type { useServerFn } from '@tanstack/react-start'
+import { createServerFn, useServerFn } from '@tanstack/react-start'
 import type { IngredientInput } from '@/db/schema'
+import { ingredient } from '@/db/schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,7 +25,27 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useMutation } from '@/hooks/use-mutation'
+import { db } from '@/db'
 
+const addIngredient = createServerFn({ method: 'POST' })
+  .inputValidator((data: IngredientInput) => data)
+  .handler(async ({ data }) => {
+    try {
+      const [insert] = await db.insert(ingredient).values(data).returning()
+
+      return {
+        success: true,
+        data: insert,
+      }
+    } catch (err) {
+      console.error(err)
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to add ingredient',
+      }
+    }
+  })
 const COMMON_UNITS = [
   'cup',
   'cups',
@@ -43,18 +64,14 @@ const COMMON_UNITS = [
 
 type IngredientAddFormProps = {
   recipeId: number
-  addIngredientFn: ReturnType<typeof useServerFn>
 }
 
-export function IngredientAddForm({
-  recipeId,
-  addIngredientFn,
-}: IngredientAddFormProps) {
+export function IngredientAddForm({ recipeId }: IngredientAddFormProps) {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [customUnit, setCustomUnit] = useState(false)
 
-  const mutation = useMutation(addIngredientFn)
+  const mutation = useMutation(useServerFn(addIngredient))
 
   const defaultIngredient: Omit<IngredientInput, 'recipe'> = {
     name: '',
