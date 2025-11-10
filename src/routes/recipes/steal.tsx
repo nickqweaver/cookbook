@@ -1,18 +1,27 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Check, Copy, Sparkles } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { AlertCircle, Check, Copy, X } from 'lucide-react'
 import type {
   IngredientInput,
   InstructionInput,
   RecipeInput,
 } from '@/db/schema'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { useState } from 'react'
+
+type StealSearch = {
+  url?: string
+}
 
 export const Route = createFileRoute('/recipes/steal')({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): StealSearch => {
+    return {
+      url: typeof search?.url === 'string' ? search.url : undefined,
+    }
+  },
 })
 
 export type Payload = RecipeInput & {
@@ -143,9 +152,12 @@ ${JSON_SCHEMA}
 Now extract the recipe and return it in a markdown JSON code block with no additional text.`
 
 function RouteComponent() {
-  const [prompt, setPrompt] = useState<string | null>(null)
-  const [url, setUrl] = useState('')
+  const navigate = useNavigate()
+  const { url } = Route.useSearch()
   const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const prompt = url ? craftPrompt(url) : null
 
   const handleCopy = async () => {
     if (prompt) {
@@ -153,6 +165,14 @@ function RouteComponent() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  const handleUrlChange = (newUrl: string) => {
+    setError(null)
+    navigate({
+      to: '/recipes/steal',
+      search: { url: newUrl || undefined },
+    })
   }
 
   return (
@@ -169,30 +189,60 @@ function RouteComponent() {
       <div className="space-y-8">
         <div className="space-y-6 rounded-lg border bg-card p-6">
           <div className="space-y-2">
-            <Label htmlFor="url">Recipe URL</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="url">Recipe URL</Label>
+              {url && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setError(null)
+                    navigate({
+                      to: '/recipes/steal',
+                      search: {},
+                    })
+                  }}
+                  className="h-auto py-1 px-2 text-xs"
+                >
+                  <X className="mr-1 size-3" />
+                  Clear
+                </Button>
+              )}
+            </div>
             <Input
               id="url"
               type="url"
-              placeholder="https://example.com/amazing-recipe"
+              placeholder="Paste a recipe URL here..."
               className="text-base"
-              onChange={(e) => setUrl(e.target.value)}
-              value={url}
+              onPaste={(e) => {
+                e.preventDefault()
+                const pastedText = e.clipboardData.getData('text')
+
+                try {
+                  const url = new URL(pastedText)
+                  handleUrlChange(url.toString())
+                } catch (err) {
+                  setError(
+                    'Invalid URL. Please paste a valid recipe URL (e.g., https://example.com/recipe)',
+                  )
+                }
+              }}
+              value={url || ''}
+              readOnly
             />
             <p className="text-sm text-muted-foreground">
-              Paste a link to any recipe online and we'll extract it for you
+              Paste a link to any recipe online and the prompt will generate
+              automatically
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <Button
-              size="lg"
-              onClick={() => setPrompt(craftPrompt(url))}
-              disabled={!url}
-            >
-              <Sparkles className="mr-2 size-5" />
-              Generate Prompt
-            </Button>
-          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" />
+              <AlertTitle>Invalid URL</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {prompt && (
@@ -221,7 +271,7 @@ function RouteComponent() {
               </Button>
             </div>
 
-            <div className="relative">
+            <div className="relative max-h-96 overflow-y-auto">
               <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-sm">
                 <code className="text-foreground">{prompt}</code>
               </pre>
@@ -234,103 +284,6 @@ function RouteComponent() {
             </p>
           </div>
         )}
-
-        <div className="space-y-6 rounded-lg border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Preview</h2>
-            <p className="text-sm text-muted-foreground">
-              Review before adding to your collection
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="preview-title">Recipe Name</Label>
-              <Input
-                id="preview-title"
-                placeholder="Recipe title will appear here"
-                className="text-base"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="preview-description">Description</Label>
-              <Textarea
-                id="preview-description"
-                placeholder="Recipe description will appear here"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="preview-servings">Servings</Label>
-                <Input
-                  id="preview-servings"
-                  type="number"
-                  placeholder="4"
-                  min={1}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="preview-preptime">Prep Time (min)</Label>
-                <Input
-                  id="preview-preptime"
-                  type="number"
-                  placeholder="30"
-                  min={0}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="preview-cooktime">Cook Time (min)</Label>
-                <Input
-                  id="preview-cooktime"
-                  type="number"
-                  placeholder="30"
-                  min={0}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="preview-ingredients">Ingredients</Label>
-              <Textarea
-                id="preview-ingredients"
-                placeholder="Ingredients will appear here (one per line)"
-                rows={6}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="preview-instructions">Instructions</Label>
-              <Textarea
-                id="preview-instructions"
-                placeholder="Instructions will appear here (one per line)"
-                rows={8}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="preview-notes">Notes</Label>
-              <Textarea
-                id="preview-notes"
-                placeholder="Any additional notes will appear here"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4 border-t">
-            <Button size="lg" disabled>
-              Add to Collection
-            </Button>
-            <Button size="lg" variant="outline" disabled>
-              Cancel
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   )
