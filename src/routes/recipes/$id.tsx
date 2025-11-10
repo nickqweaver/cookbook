@@ -113,43 +113,6 @@ const addInstruction = createServerFn({ method: 'POST' })
     }
   })
 
-const editInstruction = createServerFn({ method: 'POST' })
-  .inputValidator((data: Partial<InstructionInput>) => data)
-  .handler(async ({ data }) => {
-    try {
-      await db.update(instruction).set(data)
-
-      return {
-        success: true,
-        updatedFields: Object.keys(data),
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to update instruction',
-      }
-    }
-  })
-
-const deleteInstruction = createServerFn({ method: 'POST' })
-  .inputValidator((data: number) => data)
-  .handler(async ({ data }) => {
-    try {
-      await db.delete(instruction).where(eq(instruction.id, data))
-
-      return {
-        success: true,
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to delete ingredient',
-      }
-    }
-  })
-
 export const Route = createFileRoute('/recipes/$id')({
   component: RouteComponent,
   loader: async (args) => await getRecipe({ data: args.params.id }),

@@ -1,8 +1,6 @@
-import { useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { InstructionAddForm } from './instruction-add-form'
 import { InstructionCard } from './instruction-card'
-import { InstructionDelete } from './instruction-delete'
 import type { Instruction } from '@/db/schema'
 
 type InstructionsProps = {
@@ -16,10 +14,6 @@ export function Instructions({
   recipeId,
   addInstructionFn,
 }: InstructionsProps) {
-  const [deletingInstructionId, setDeletingInstructionId] = useState<
-    number | null
-  >(null)
-
   const addFn = useServerFn(addInstructionFn)
 
   const sortedInstructions = [...instructions].sort((a, b) => a.order - b.order)
@@ -46,7 +40,6 @@ export function Instructions({
               key={instructionItem.id}
               instruction={instructionItem}
               stepNumber={index + 1}
-              onDelete={setDeletingInstructionId}
             />
           ))}
         </ol>
@@ -55,16 +48,6 @@ export function Instructions({
           No instructions added yet
         </p>
       )}
-
-      <InstructionDelete
-        isOpen={deletingInstructionId !== null}
-        onClose={() => setDeletingInstructionId(null)}
-        onConfirm={() => {
-          // Delete logic will go here
-          console.log('Delete instruction', deletingInstructionId)
-          setDeletingInstructionId(null)
-        }}
-      />
     </section>
   )
 }
