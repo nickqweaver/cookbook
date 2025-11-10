@@ -15,28 +15,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import { useMutation } from '@/hooks/use-mutation'
 
-const getRecipes = createServerFn({ method: 'GET' }).handler(async () => {
-  try {
-    const recipes = await db
-      .select()
-      .from(recipe)
-      .orderBy(desc(recipe.createdAt))
-      .limit(20)
+const RECIPES_PER_PAGE = 20
 
-    return {
-      success: true,
-      data: recipes,
+const getRecipes = createServerFn({ method: 'GET' })
+  .inputValidator((data: { page: number }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const offset = (data.page - 1) * RECIPES_PER_PAGE
+
+      const [recipes, totalResult] = await Promise.all([
+        db
+          .select()
+          .from(recipe)
+          .orderBy(desc(recipe.createdAt))
+          .limit(RECIPES_PER_PAGE)
+          .offset(offset),
+        db.select({ count: recipe.id }).from(recipe),
+      ])
+
+      const total = totalResult.length
+
+      return {
+        success: true,
+        data: {
+          recipes,
+          total,
+          page: data.page,
+          totalPages: Math.ceil(total / RECIPES_PER_PAGE),
+        },
+      }
+    } catch (err) {
+      console.error(err)
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to fetch recipes',
+      }
     }
-  } catch (err) {
-    console.error(err)
-    return {
-      success: false,
-      message: err instanceof Error ? err.message : 'Failed to fetch recipes',
-    }
-  }
-})
+  })
 
 const deleteRecipe = createServerFn({ method: 'POST' })
   .inputValidator((data: number) => data)
@@ -55,9 +81,20 @@ const deleteRecipe = createServerFn({ method: 'POST' })
     }
   })
 
+type RecipesSearch = {
+  page?: number
+}
+
 export const Route = createFileRoute('/recipes/')({
   component: RouteComponent,
-  loader: async () => await getRecipes(),
+  validateSearch: (search: Record<string, unknown>): RecipesSearch => {
+    return {
+      page: Number(search?.page) || 1,
+    }
+  },
+  loaderDeps: ({ search }) => ({ page: search.page }),
+  loader: async ({ deps }) =>
+    await getRecipes({ data: { page: deps.page || 1 } }),
 })
 
 type RecipeCardProps = {
@@ -181,6 +218,8 @@ function RecipeRow({ recipe }: RecipeCardProps) {
 
 function RouteComponent() {
   const data = Route.useLoaderData()
+  const { page } = Route.useSearch()
+  const router = useRouter()
 
   if (!data.success) {
     return (
@@ -190,7 +229,8 @@ function RouteComponent() {
     )
   }
 
-  const { data: recipes } = data
+  const { recipes, total, totalPages } = data.data
+  const currentPage = page || 1
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -200,7 +240,7 @@ function RouteComponent() {
             Recipes
           </h1>
           <p className="text-muted-foreground mt-3 text-lg">
-            Discover and explore your collection
+            Discover and explore your collection ({total} total)
           </p>
         </div>
         <Button asChild>
@@ -212,11 +252,101 @@ function RouteComponent() {
       </div>
 
       {recipes.length > 0 ? (
-        <div className="space-y-2">
-          {recipes.map((recipe) => (
-            <RecipeRow key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-2">
+            {recipes.map((recipe) => (
+              <RecipeRow key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination className="mt-8">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (currentPage > 1) {
+                        router.navigate({
+                          to: '/recipes',
+                          search: { page: currentPage - 1 },
+                        })
+                      }
+                    }}
+                    className={
+                      currentPage === 1
+                        ? 'pointer-events-none opacity-50'
+                        : 'cursor-pointer'
+                    }
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => {
+                    const showPage =
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+
+                    if (!showPage) {
+                      if (
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )
+                      }
+                      return null
+                    }
+
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            router.navigate({
+                              to: '/recipes',
+                              search: { page: pageNum },
+                            })
+                          }}
+                          isActive={pageNum === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  },
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (currentPage < totalPages) {
+                        router.navigate({
+                          to: '/recipes',
+                          search: { page: currentPage + 1 },
+                        })
+                      }
+                    }}
+                    className={
+                      currentPage === totalPages
+                        ? 'pointer-events-none opacity-50'
+                        : 'cursor-pointer'
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg mb-6">
