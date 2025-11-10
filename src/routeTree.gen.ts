@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RecipesIndexRouteImport } from './routes/recipes/index'
+import { Route as RecipesStealRouteImport } from './routes/recipes/steal'
 import { Route as RecipesCreateRouteImport } from './routes/recipes/create'
 import { Route as RecipesIdRouteImport } from './routes/recipes/$id'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const RecipesIndexRoute = RecipesIndexRouteImport.update({
   id: '/recipes/',
   path: '/recipes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecipesStealRoute = RecipesStealRouteImport.update({
+  id: '/recipes/steal',
+  path: '/recipes/steal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecipesCreateRoute = RecipesCreateRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
+  '/recipes/steal': typeof RecipesStealRoute
   '/recipes': typeof RecipesIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
+  '/recipes/steal': typeof RecipesStealRoute
   '/recipes': typeof RecipesIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
+  '/recipes/steal': typeof RecipesStealRoute
   '/recipes/': typeof RecipesIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/demo/tanstack-query'
     | '/recipes/$id'
     | '/recipes/create'
+    | '/recipes/steal'
     | '/recipes'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/demo/tanstack-query'
     | '/recipes/$id'
     | '/recipes/create'
+    | '/recipes/steal'
     | '/recipes'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/demo/tanstack-query'
     | '/recipes/$id'
     | '/recipes/create'
+    | '/recipes/steal'
     | '/recipes/'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   RecipesIdRoute: typeof RecipesIdRoute
   RecipesCreateRoute: typeof RecipesCreateRoute
+  RecipesStealRoute: typeof RecipesStealRoute
   RecipesIndexRoute: typeof RecipesIndexRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoApiTqTodosRoute: typeof DemoApiTqTodosRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/recipes'
       fullPath: '/recipes'
       preLoaderRoute: typeof RecipesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recipes/steal': {
+      id: '/recipes/steal'
+      path: '/recipes/steal'
+      fullPath: '/recipes/steal'
+      preLoaderRoute: typeof RecipesStealRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recipes/create': {
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   RecipesIdRoute: RecipesIdRoute,
   RecipesCreateRoute: RecipesCreateRoute,
+  RecipesStealRoute: RecipesStealRoute,
   RecipesIndexRoute: RecipesIndexRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoApiTqTodosRoute: DemoApiTqTodosRoute,

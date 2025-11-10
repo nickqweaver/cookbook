@@ -91,7 +91,7 @@ export const cookIngredient = sqliteTable(
   (t) => [unique().on(t.cook, t.ingredient)],
 )
 
-export type RecipeInsert = typeof recipe.$inferInsert
+export type RecipeInput = typeof recipe.$inferInsert
 export type Recipe = typeof recipe.$inferSelect
 export type IngredientInput = typeof ingredient.$inferInsert
 export type Ingredient = typeof ingredient.$inferSelect
