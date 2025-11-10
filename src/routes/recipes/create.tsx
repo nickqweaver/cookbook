@@ -64,10 +64,12 @@ function RouteComponent() {
   })
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Create Recipe</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-4xl font-semibold tracking-tight lg:text-5xl">
+          Create Recipe
+        </h1>
+        <p className="text-muted-foreground mt-3 text-lg">
           Add a new recipe to your collection
         </p>
       </div>
