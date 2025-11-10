@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
+import { useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm'
 import { Check, Pencil, Trash2, X } from 'lucide-react'
@@ -10,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useMutation } from '@/hooks/use-mutation'
 import { db } from '@/db'
-import { useRouter } from '@tanstack/react-router'
 
 type IngredientCardProps = {
   ingredient: Ingredient
