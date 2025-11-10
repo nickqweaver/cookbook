@@ -1,15 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { AlertCircle, Check, Copy, X } from 'lucide-react'
-import type {
-  IngredientInput,
-  InstructionInput,
-  RecipeInput,
-} from '@/db/schema'
+import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useState } from 'react'
 
 type StealSearch = {
   url?: string
@@ -19,15 +14,10 @@ export const Route = createFileRoute('/recipes/steal')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): StealSearch => {
     return {
-      url: typeof search?.url === 'string' ? search.url : undefined,
+      url: typeof search.url === 'string' ? search.url : undefined,
     }
   },
 })
-
-export type Payload = RecipeInput & {
-  instructions: Array<InstructionInput>
-  ingredients: Array<IngredientInput>
-}
 
 export const JSON_SCHEMA = `{
   "title": "string (required) - The name of the recipe",
@@ -219,8 +209,8 @@ function RouteComponent() {
                 const pastedText = e.clipboardData.getData('text')
 
                 try {
-                  const url = new URL(pastedText)
-                  handleUrlChange(url.toString())
+                  const u = new URL(pastedText)
+                  handleUrlChange(u.toString())
                 } catch (err) {
                   setError(
                     'Invalid URL. Please paste a valid recipe URL (e.g., https://example.com/recipe)',
