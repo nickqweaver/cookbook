@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, Check, Copy, X } from 'lucide-react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { AlertCircle, ArrowRight, Check, Copy, X } from 'lucide-react'
 import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -43,38 +43,95 @@ export const JSON_SCHEMA = `{
 
 export const craftPrompt = (
   url: string,
-) => `You are an expert recipe extraction assistant. Your task is to analyze the recipe from the provided URL and extract all relevant information into a structured JSON format.
+) => `You are an expert recipe extraction assistant. Your task is to analyze ONLY the content from the provided URL and extract all relevant recipe information into a structured JSON format.
 
 # URL to Process:
 ${url}
 
-# Your Mission:
-Extract the recipe data from the webpage content and filter out all the unnecessary blog content, ads, life stories, and other nonsense that recipe sites are notorious for. Focus ONLY on the actual recipe information.
+# CRITICAL INSTRUCTIONS:
+- You must extract data **solely** from the actual content of the specified webpage.
+- **Never** invent, infer, fill in, or hallucinate details.
+- If any critical information (title, ingredients, or instructions) is missing or incomplete,
+  or if extraction confidence is uncertain, you must return a structured error
+  **explaining the exact reason** for the failure.
+- Use the provided JSON schema to shape your output.
+- Every field in the recipe JSON must be explicitly supported by the webpage content.
 
-# Extraction Guidelines:
+# FAILURE CONDITIONS:
+If ANY of the following occur, you must return an error object instead of a recipe:
+1. The page does not contain a recognizable or complete recipe.
+2. Any essential section (title, ingredients, instructions) is missing or incomplete.
+3. There is uncertainty, ambiguity, or guesswork about any information.
+4. The LLM detects conflicting or unreliable recipe data.
+
+# ERROR RESPONSE FORMAT:
+If extraction fails, output a **single JSON object** with the following fields:
+
+\`\`\`json
+{
+  "error": true,
+  "message": "Short human-readable summary of why recipe could not be extracted.",
+  "details": {
+    "missing_fields": ["title", "ingredients", ...],
+    "partial_fields": ["description", "cooktime"],
+    "reasoning": "A concise explanation of what was found and why it was considered unreliable or incomplete."
+  }
+}
+\`\`\`
+
+### Example error outputs:
+**Missing recipe entirely:**
+\`\`\`json
+{
+  "error": true,
+  "message": "No recipe data detected on this page.",
+  "details": {
+    "missing_fields": ["title", "ingredients", "instructions"],
+    "partial_fields": [],
+    "reasoning": "The content appears to be a blog article without a recipe structure."
+  }
+}
+\`\`\`
+
+**Partial data found:**
+\`\`\`json
+{
+  "error": true,
+  "message": "Recipe data incomplete — missing ingredients list.",
+  "details": {
+    "missing_fields": ["ingredients"],
+    "partial_fields": ["description"],
+    "reasoning": "A recipe title and basic instructions were present, but no ingredient data was found in the page body."
+  }
+}
+\`\`\`
+
+# SUCCESS FORMAT:
+If a complete and reliable recipe is found, return the extracted recipe as **a single JSON object**
+wrapped in one markdown code block. You must strictly follow the schema below:
+
+${JSON_SCHEMA}
+
+# EXTRACTION GUIDELINES (apply ONLY when a valid recipe is confirmed):
 
 ## Recipe Basics:
-- Extract the exact recipe title (clean, no extra punctuation)
-- Create a concise 1-2 sentence description if one exists
-- Identify the number of servings/yield
-- Extract prep time and cook time in minutes (convert hours to minutes if needed)
-- Capture any helpful notes, tips, storage instructions, or variations
+- Extract exact title
+- Include description only if present
+- Extract servings, prep and cook time
+- Extract notes, tips, or variations only if explicitly present
 
 ## Ingredients:
-- Parse each ingredient with its amount, unit, and name
-- Convert all fractional amounts to decimal numbers (e.g., "1/2" → 0.5, "1 1/4" → 1.25)
-- Use standard abbreviations for units: cup, tbsp, tsp, oz, lb, g, kg, ml, l
-- For counted items use "whole" or "piece" (e.g., "2 eggs" → amount: 2, unit: "whole")
-- Keep ingredient names descriptive: "all-purpose flour" not just "flour"
-- Remove any preparation notes from ingredient names (move to instructions if important)
+- Each must include numeric amount, standardized unit, descriptive name
+- Convert fractions to decimals
+- Remove prep terms from names (move to instructions if relevant)
+- Do not invent ingredients
 
 ## Instructions:
-- Number each step sequentially starting from 1
-- Keep the original instruction text but clean up HTML artifacts
-- Each step should be a complete, actionable instruction
-- Preserve important details like temperatures, times, and techniques
+- Number sequentially starting from 1
+- Use only real cooking/prep steps from the page
+- Clean formatting; preserve times, techniques, and temperatures
 
-## Default Values (use only if information is missing):
+## Default Values (allowed only if recipe structure is otherwise complete):
 - servings: 4
 - preptime: 30
 - cooktime: 30
@@ -82,39 +139,25 @@ Extract the recipe data from the webpage content and filter out all the unnecess
 - notes: null
 
 ## Time Handling:
-- If a range is given (e.g., "30-40 minutes"), use the middle value (35) or first value (30)
-- Convert all times to minutes (e.g., "1 hour 30 minutes" → 90)
-- Total time should be split into prep and cook if possible
+- Convert all time to minutes
+- If range detected, pick midpoint or lower value
+- Distinguish between prep and cook times if clearly stated
 
 # CRITICAL OUTPUT REQUIREMENTS:
-Return the extracted recipe data as a JSON object wrapped in a markdown code block for easy copying.
+- Return exactly one markdown JSON block (no prose before or after)
+- NEVER output multiple JSONs in one response
+- NEVER add commentary outside the JSON
+- If recipe is incomplete or uncertain, return detailed error JSON instead
 
-Format your response EXACTLY like this:
+# Example Recipe Output:
 \`\`\`json
-{
-  "title": "...",
-  "description": "...",
-  ...
-}
-\`\`\`
-
-DO NOT include:
-- Any explanatory text before or after the code block
-- Multiple code blocks
-- Any commentary within the JSON
-
-Your entire response should be a single markdown JSON code block matching this schema:
-
-${JSON_SCHEMA}
-
-# Example Output:
 {
   "title": "Classic Chocolate Chip Cookies",
   "description": "Soft and chewy homemade chocolate chip cookies with crispy edges",
   "servings": 24,
   "preptime": 15,
   "cooktime": 12,
-  "notes": "For chewier cookies, slightly underbake. Store in airtight container up to 5 days. Can freeze dough for up to 3 months.",
+  "notes": "For chewier cookies, slightly underbake. Store airtight up to 5 days.",
   "ingredients": [
     { "name": "all-purpose flour", "amount": 2.25, "unit": "cup" },
     { "name": "unsalted butter, softened", "amount": 1, "unit": "cup" },
@@ -127,19 +170,15 @@ ${JSON_SCHEMA}
     { "name": "semi-sweet chocolate chips", "amount": 2, "unit": "cup" }
   ],
   "instructions": [
-    { "order": 1, "content": "Preheat oven to 375°F (190°C). Line baking sheets with parchment paper." },
-    { "order": 2, "content": "In a large bowl, cream together softened butter and both sugars until light and fluffy, about 3-4 minutes." },
-    { "order": 3, "content": "Beat in eggs one at a time, then stir in vanilla extract." },
-    { "order": 4, "content": "In a separate bowl, whisk together flour, baking soda, and salt." },
-    { "order": 5, "content": "Gradually mix the dry ingredients into the butter mixture until just combined." },
-    { "order": 6, "content": "Fold in chocolate chips with a spatula." },
-    { "order": 7, "content": "Drop rounded tablespoons of dough onto prepared baking sheets, spacing 2 inches apart." },
-    { "order": 8, "content": "Bake for 9-11 minutes or until edges are golden brown but centers still look slightly underdone." },
-    { "order": 9, "content": "Cool on baking sheet for 2 minutes, then transfer to a wire rack to cool completely." }
+    { "order": 1, "content": "Preheat oven to 375°F (190°C)." },
+    { "order": 2, "content": "Cream butter and sugars until light and fluffy." },
+    { "order": 3, "content": "Beat in eggs and vanilla." },
+    { "order": 4, "content": "Mix in dry ingredients, then fold in chocolate chips." },
+    { "order": 5, "content": "Scoop onto sheet and bake for 9–11 minutes." }
   ]
 }
-
-Now extract the recipe and return it in a markdown JSON code block with no additional text.`
+\`\`\`
+`
 
 function RouteComponent() {
   const navigate = useNavigate()
@@ -167,13 +206,21 @@ function RouteComponent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-semibold tracking-tight lg:text-5xl">
-          Steal a Recipe
-        </h1>
-        <p className="text-muted-foreground mt-3 text-lg">
-          Turn any recipe URL into your own shameless collection piece
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight lg:text-5xl">
+            Steal a Recipe
+          </h1>
+          <p className="text-muted-foreground mt-3 text-lg">
+            Turn any recipe URL into your own shameless collection piece
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/recipes/digest">
+            Next: Digest
+            <ArrowRight className="ml-2 size-4" />
+          </Link>
+        </Button>
       </div>
 
       <div className="space-y-8">

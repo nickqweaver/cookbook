@@ -1,7 +1,16 @@
 import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
-import { BookOpen, ChefHat, Home, Menu, Plus, X } from 'lucide-react'
+import {
+  BookOpen,
+  ChefHat,
+  Home,
+  Menu,
+  Plus,
+  Sparkles,
+  Utensils,
+  X,
+} from 'lucide-react'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -79,6 +88,34 @@ export default function Header() {
           >
             <Plus size={20} />
             <span className="font-medium">Create Recipe</span>
+          </Link>
+
+          <div className="my-4 border-t" />
+
+          <Link
+            to="/recipes/steal"
+            onClick={() => setIsOpen(false)}
+            className="mb-2 flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent"
+            activeProps={{
+              className:
+                'mb-2 flex items-center gap-3 rounded-lg p-3 bg-primary text-primary-foreground hover:bg-primary/90',
+            }}
+          >
+            <Sparkles size={20} />
+            <span className="font-medium">Steal Recipe</span>
+          </Link>
+
+          <Link
+            to="/recipes/digest"
+            onClick={() => setIsOpen(false)}
+            className="mb-2 flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent"
+            activeProps={{
+              className:
+                'mb-2 flex items-center gap-3 rounded-lg p-3 bg-primary text-primary-foreground hover:bg-primary/90',
+            }}
+          >
+            <Utensils size={20} />
+            <span className="font-medium">Digest Recipe</span>
           </Link>
         </nav>
       </aside>
