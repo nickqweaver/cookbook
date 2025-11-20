@@ -95,10 +95,12 @@ const extractRecipeWithAI = createServerFn({ method: 'POST' })
       turndownService.remove(['script', 'style', 'iframe', 'noscript'])
       const markdown = turndownService.turndown(html)
 
+      const aiStart = performance.now()
       // Extract recipe with AI
       const result = await generateObject({
         model: openai('gpt-4o-mini'),
         schema: recipeSchema,
+        stream: true,
         prompt: `Extract the recipe information from the following webpage content. Return ONLY valid recipe data in JSON format.
 
 Source URL: ${url}
@@ -119,6 +121,7 @@ Extract:
 If the page doesn't contain a valid recipe, return an error.`,
       })
 
+      console.log(performance.now() - aiStart, 'Total AI time')
       // Insert into database
       const [newRecipe] = await db
         .insert(recipe)
