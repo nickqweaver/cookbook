@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
+import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { AlertCircle, ArrowRight, Check, Copy, Loader2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
@@ -38,7 +38,7 @@ const fetchRecipeHtml = createServerFn({ method: 'GET' })
   .inputValidator((url: string) => url)
   .handler(async ({ data: url }) => {
     try {
-      const TurndownService = (await import('turndown')).default
+      const { NodeHtmlMarkdown } = await import('node-html-markdown')
       const response = await fetch(url)
 
       if (!response.ok) {
@@ -48,15 +48,9 @@ const fetchRecipeHtml = createServerFn({ method: 'GET' })
       const html = await response.text()
 
       // Convert HTML to markdown
-      const turndownService = new TurndownService({
-        headingStyle: 'atx',
-        codeBlockStyle: 'fenced',
+      const markdown = NodeHtmlMarkdown.translate(html, {
+        ignore: ['script', 'style', 'iframe', 'noscript'],
       })
-
-      // Remove unwanted elements before conversion
-      turndownService.remove(['script', 'style', 'iframe', 'noscript'])
-
-      const markdown = turndownService.turndown(html)
 
       return { success: true, content: markdown }
     } catch (error) {
@@ -80,7 +74,7 @@ const extractRecipeWithAI = createServerFn({ method: 'POST' })
       const { recipe, ingredient, instruction } = await import('@/db/schema')
 
       // Fetch and convert HTML to markdown
-      const TurndownService = (await import('turndown')).default
+      const { NodeHtmlMarkdown } = await import('node-html-markdown')
       const response = await fetch(url)
 
       if (!response.ok) {
@@ -88,19 +82,15 @@ const extractRecipeWithAI = createServerFn({ method: 'POST' })
       }
 
       const html = await response.text()
-      const turndownService = new TurndownService({
-        headingStyle: 'atx',
-        codeBlockStyle: 'fenced',
+      const markdown = NodeHtmlMarkdown.translate(html, {
+        ignore: ['script', 'style', 'iframe', 'noscript'],
       })
-      turndownService.remove(['script', 'style', 'iframe', 'noscript'])
-      const markdown = turndownService.turndown(html)
 
       const aiStart = performance.now()
       // Extract recipe with AI
       const result = await generateObject({
         model: openai('gpt-4o-mini'),
         schema: recipeSchema,
-        stream: true,
         prompt: `Extract the recipe information from the following webpage content. Return ONLY valid recipe data in JSON format.
 
 Source URL: ${url}
@@ -121,7 +111,6 @@ Extract:
 If the page doesn't contain a valid recipe, return an error.`,
       })
 
-      console.log(performance.now() - aiStart, 'Total AI time')
       // Insert into database
       const [newRecipe] = await db
         .insert(recipe)
@@ -166,6 +155,7 @@ If the page doesn't contain a valid recipe, return an error.`,
 
 export const Route = createFileRoute('/recipes/steal')({
   component: RouteComponent,
+  ssr: false,
   validateSearch: (search: Record<string, unknown>): StealSearch => {
     return {
       url: typeof search.url === 'string' ? search.url : undefined,
@@ -351,6 +341,8 @@ function RouteComponent() {
 
   const prompt = url && content ? craftPrompt(url, content) : null
 
+  const fetchRecipe = useServerFn(fetchRecipeHtml)
+
   useEffect(() => {
     if (!url) {
       setContent(null)
@@ -358,13 +350,13 @@ function RouteComponent() {
       return
     }
 
-    const fetchContent = async () => {
+    ;(async () => {
       setLoading(true)
       setError(null)
       setContent(null)
 
       try {
-        const result = await fetchRecipeHtml({ data: url })
+        const result = await fetchRecipe({ data: url })
 
         if (result.success) {
           setContent(result.content)
@@ -380,9 +372,7 @@ function RouteComponent() {
       } finally {
         setLoading(false)
       }
-    }
-
-    fetchContent()
+    })()
   }, [url])
 
   const handleCopy = async () => {
