@@ -48,7 +48,8 @@ FROM node:22-alpine AS runner
 # Install runtime dependencies for better-sqlite3
 # - sqlite-libs: SQLite shared libraries needed at runtime
 # - libstdc++: C++ standard library (required by native modules)
-RUN apk add --no-cache sqlite-libs libstdc++
+# - su-exec: Lightweight tool to drop from root to non-root user (like gosu)
+RUN apk add --no-cache sqlite-libs libstdc++ su-exec
 
 WORKDIR /app
 
@@ -78,8 +79,8 @@ COPY --from=builder --chown=cookbook:nodejs /app/node_modules ./node_modules
 COPY --chown=cookbook:nodejs entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-# Switch to non-root user
-USER cookbook
+# Note: We start as root so entrypoint.sh can fix volume permissions,
+# then it drops to the cookbook user via su-exec for security.
 
 # Expose the application port
 EXPOSE 3000

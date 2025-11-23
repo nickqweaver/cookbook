@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { AlertCircle, ArrowRight, Check, Copy, Loader2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { z } from 'zod'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -343,38 +343,6 @@ function RouteComponent() {
 
   const fetchRecipe = useServerFn(fetchRecipeHtml)
 
-  useEffect(() => {
-    if (!url) {
-      setContent(null)
-      setLoading(false)
-      return
-    }
-
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      setContent(null)
-
-      try {
-        const result = await fetchRecipe({ data: url })
-
-        if (result.success) {
-          setContent(result.content)
-        } else {
-          setError(result.error)
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? `Failed to fetch recipe page: ${err.message}`
-            : 'Failed to fetch recipe page',
-        )
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [url])
-
   const handleCopy = async () => {
     if (prompt) {
       await navigator.clipboard.writeText(prompt)
@@ -413,10 +381,47 @@ function RouteComponent() {
 
   const handleUrlChange = (newUrl: string) => {
     setError(null)
+    setContent(null)
     navigate({
       to: '/recipes/steal',
       search: { url: newUrl || undefined },
+      replace: true,
     })
+  }
+
+  const handleFetch = async () => {
+    if (!url) return
+
+    try {
+      new URL(url)
+    } catch {
+      setError(
+        'Invalid URL. Please enter a valid recipe URL (e.g., https://example.com/recipe)',
+      )
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setContent(null)
+
+    try {
+      const result = await fetchRecipe({ data: url })
+
+      if (result.success) {
+        setContent(result.content)
+      } else {
+        setError(result.error)
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Failed to fetch recipe page: ${err.message}`
+          : 'Failed to fetch recipe page',
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -449,6 +454,7 @@ function RouteComponent() {
                   size="sm"
                   onClick={() => {
                     setError(null)
+                    setContent(null)
                     navigate({
                       to: '/recipes/steal',
                       search: {},
@@ -461,30 +467,26 @@ function RouteComponent() {
                 </Button>
               )}
             </div>
-            <Input
-              id="url"
-              type="url"
-              placeholder="Paste a recipe URL here..."
-              className="text-base"
-              onPaste={(e) => {
-                e.preventDefault()
-                const pastedText = e.clipboardData.getData('text')
-
-                try {
-                  const u = new URL(pastedText)
-                  handleUrlChange(u.toString())
-                } catch (err) {
-                  setError(
-                    'Invalid URL. Please paste a valid recipe URL (e.g., https://example.com/recipe)',
-                  )
-                }
-              }}
-              value={url || ''}
-              readOnly
-            />
+            <div className="flex gap-2">
+              <Input
+                id="url"
+                type="url"
+                placeholder="Enter a recipe URL..."
+                className="text-base"
+                value={url || ''}
+                onChange={(e) => handleUrlChange(e.target.value)}
+              />
+              <Button onClick={handleFetch} disabled={!url || loading}>
+                {loading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  'Fetch'
+                )}
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Paste a link to any recipe online. We'll fetch the HTML and
-              generate a prompt with the content included.
+              Enter a link to any recipe online and click Fetch to load the
+              content.
             </p>
           </div>
 
