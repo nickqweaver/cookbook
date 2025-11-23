@@ -1,0 +1,52 @@
+# =============================================================================
+# Docker Ignore File
+# =============================================================================
+# Files listed here are NOT copied into the Docker image during build.
+# This speeds up builds and keeps the image smaller.
+# =============================================================================
+
+# Dependencies - we run npm ci in the container
+node_modules
+
+# Build outputs - we build fresh in the container
+.output
+.nitro
+.tanstack
+.vinxi
+dist
+dist-ssr
+
+# Git
+.git
+.gitignore
+
+# Environment files - we pass these via docker-compose
+.env
+.env.*
+!.env.example
+
+# Development files
+*.local
+.DS_Store
+*.log
+
+# IDE
+.vscode
+.idea
+
+# Docker files (no need to copy these into the image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+DOCKER.md
+
+# Data directory (mounted as volume, not copied)
+data/
+
+# Database files
+*.db
+*.sqlite
+
+# Documentation (not needed in runtime)
+README.md
+AGENTS.md
