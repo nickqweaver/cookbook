@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-type StealSearch = {
+type ImportSearch = {
   url?: string
 }
 
@@ -191,10 +191,10 @@ If the page doesn't contain a valid recipe, return an error.`,
     }
   })
 
-export const Route = createFileRoute('/recipes/steal')({
+export const Route = createFileRoute('/recipes/import')({
   component: RouteComponent,
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): StealSearch => {
+  validateSearch: (search: Record<string, unknown>): ImportSearch => {
     return {
       url: typeof search.url === 'string' ? search.url : undefined,
     }
@@ -421,7 +421,7 @@ function RouteComponent() {
     setError(null)
     setContent(null)
     navigate({
-      to: '/recipes/steal',
+      to: '/recipes/import',
       search: { url: newUrl || undefined },
       replace: true,
     })
@@ -467,10 +467,10 @@ function RouteComponent() {
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight lg:text-5xl">
-            Steal a Recipe
+            Import a Recipe
           </h1>
           <p className="text-muted-foreground mt-3 text-lg">
-            Turn any recipe URL into your own shameless collection piece
+            Add any recipe from the web to your personal collection
           </p>
         </div>
         <Button asChild variant="outline">
@@ -494,7 +494,7 @@ function RouteComponent() {
                     setError(null)
                     setContent(null)
                     navigate({
-                      to: '/recipes/steal',
+                      to: '/recipes/import',
                       search: {},
                     })
                   }}

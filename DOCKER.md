@@ -6,7 +6,7 @@ This guide will help you deploy the Cookbook application on your home lab Ubuntu
 
 - Docker and Docker Compose installed on your Ubuntu server
 - Git to clone the repository
-- An OpenAI API key (for the recipe stealing feature)
+- An OpenAI API key (for the recipe import feature)
 
 ### Installing Docker on Ubuntu
 

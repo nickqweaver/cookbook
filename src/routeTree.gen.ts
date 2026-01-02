@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RecipesIndexRouteImport } from './routes/recipes/index'
-import { Route as RecipesStealRouteImport } from './routes/recipes/steal'
+import { Route as RecipesImportRouteImport } from './routes/recipes/import'
 import { Route as RecipesDigestRouteImport } from './routes/recipes/digest'
 import { Route as RecipesCreateRouteImport } from './routes/recipes/create'
 import { Route as RecipesIdRouteImport } from './routes/recipes/$id'
@@ -27,9 +27,9 @@ const RecipesIndexRoute = RecipesIndexRouteImport.update({
   path: '/recipes/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RecipesStealRoute = RecipesStealRouteImport.update({
-  id: '/recipes/steal',
-  path: '/recipes/steal',
+const RecipesImportRoute = RecipesImportRouteImport.update({
+  id: '/recipes/import',
+  path: '/recipes/import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecipesDigestRoute = RecipesDigestRouteImport.update({
@@ -58,7 +58,7 @@ export interface FileRoutesByFullPath {
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
   '/recipes/digest': typeof RecipesDigestRoute
-  '/recipes/steal': typeof RecipesStealRoute
+  '/recipes/import': typeof RecipesImportRoute
   '/recipes': typeof RecipesIndexRoute
   '/recipes/$id/cook/$cookId': typeof RecipesIdCookCookIdRoute
 }
@@ -67,7 +67,7 @@ export interface FileRoutesByTo {
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
   '/recipes/digest': typeof RecipesDigestRoute
-  '/recipes/steal': typeof RecipesStealRoute
+  '/recipes/import': typeof RecipesImportRoute
   '/recipes': typeof RecipesIndexRoute
   '/recipes/$id/cook/$cookId': typeof RecipesIdCookCookIdRoute
 }
@@ -77,7 +77,7 @@ export interface FileRoutesById {
   '/recipes/$id': typeof RecipesIdRoute
   '/recipes/create': typeof RecipesCreateRoute
   '/recipes/digest': typeof RecipesDigestRoute
-  '/recipes/steal': typeof RecipesStealRoute
+  '/recipes/import': typeof RecipesImportRoute
   '/recipes/': typeof RecipesIndexRoute
   '/recipes/$id_/cook/$cookId': typeof RecipesIdCookCookIdRoute
 }
@@ -88,7 +88,7 @@ export interface FileRouteTypes {
     | '/recipes/$id'
     | '/recipes/create'
     | '/recipes/digest'
-    | '/recipes/steal'
+    | '/recipes/import'
     | '/recipes'
     | '/recipes/$id/cook/$cookId'
   fileRoutesByTo: FileRoutesByTo
@@ -97,7 +97,7 @@ export interface FileRouteTypes {
     | '/recipes/$id'
     | '/recipes/create'
     | '/recipes/digest'
-    | '/recipes/steal'
+    | '/recipes/import'
     | '/recipes'
     | '/recipes/$id/cook/$cookId'
   id:
@@ -106,7 +106,7 @@ export interface FileRouteTypes {
     | '/recipes/$id'
     | '/recipes/create'
     | '/recipes/digest'
-    | '/recipes/steal'
+    | '/recipes/import'
     | '/recipes/'
     | '/recipes/$id_/cook/$cookId'
   fileRoutesById: FileRoutesById
@@ -116,7 +116,7 @@ export interface RootRouteChildren {
   RecipesIdRoute: typeof RecipesIdRoute
   RecipesCreateRoute: typeof RecipesCreateRoute
   RecipesDigestRoute: typeof RecipesDigestRoute
-  RecipesStealRoute: typeof RecipesStealRoute
+  RecipesImportRoute: typeof RecipesImportRoute
   RecipesIndexRoute: typeof RecipesIndexRoute
   RecipesIdCookCookIdRoute: typeof RecipesIdCookCookIdRoute
 }
@@ -137,11 +137,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecipesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/recipes/steal': {
-      id: '/recipes/steal'
-      path: '/recipes/steal'
-      fullPath: '/recipes/steal'
-      preLoaderRoute: typeof RecipesStealRouteImport
+    '/recipes/import': {
+      id: '/recipes/import'
+      path: '/recipes/import'
+      fullPath: '/recipes/import'
+      preLoaderRoute: typeof RecipesImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recipes/digest': {
@@ -180,7 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecipesIdRoute: RecipesIdRoute,
   RecipesCreateRoute: RecipesCreateRoute,
   RecipesDigestRoute: RecipesDigestRoute,
-  RecipesStealRoute: RecipesStealRoute,
+  RecipesImportRoute: RecipesImportRoute,
   RecipesIndexRoute: RecipesIndexRoute,
   RecipesIdCookCookIdRoute: RecipesIdCookCookIdRoute,
 }

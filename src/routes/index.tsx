@@ -1,5 +1,12 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { BookOpen, ChefHat, Lock, Sparkles } from 'lucide-react'
+import {
+  BookOpen,
+  ChefHat,
+  Clock,
+  Download,
+  ListChecks,
+  Utensils,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/')({ component: App })
@@ -15,39 +22,69 @@ function App() {
               <BookOpen className="size-16 md:size-20 text-primary" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
-              Mr. Weaver's
+              Cook<span className="text-primary">Weave</span>
             </h1>
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Book of <span className="text-primary">Stolen Flavors</span>
-            </h2>
+            <p className="text-xl md:text-2xl text-muted-foreground">
+              Your personal recipe collection, beautifully organized
+            </p>
           </div>
 
-          <p className="text-muted-foreground text-xl md:text-2xl mb-8 max-w-2xl mx-auto leading-relaxed">
-            Where "inspired by" meets "I literally copied this from the internet
-            and pretend it's mine at dinner parties"
+          <p className="text-muted-foreground text-lg md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
+            Import recipes from any website, organize your collection, and cook
+            with confidence using step-by-step guidance.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <Button asChild size="lg">
               <Link to="/recipes">
                 <BookOpen className="mr-2 size-5" />
-                Browse Stolen Goods
+                Browse Recipes
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/recipes/create">
-                <Sparkles className="mr-2 size-5" />
-                Steal a New Recipe
+              <Link to="/recipes/import">
+                <Download className="mr-2 size-5" />
+                Import a Recipe
               </Link>
             </Button>
           </div>
+        </div>
+      </section>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-sm text-muted-foreground">
-            <Lock className="size-4" />
-            <span>
-              Hosted on Mr. Weaver's super secure home server (please don't hack
-              me)
-            </span>
+      <section className="py-16 px-6 max-w-5xl mx-auto">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
+          Everything you need to manage your recipes
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="space-y-3 p-6 rounded-lg border bg-card text-center">
+            <div className="flex justify-center mb-4">
+              <Download className="size-10 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">Smart Import</h3>
+            <p className="text-sm text-muted-foreground">
+              Paste any recipe URL and let AI extract ingredients, instructions,
+              and timing automatically.
+            </p>
+          </div>
+          <div className="space-y-3 p-6 rounded-lg border bg-card text-center">
+            <div className="flex justify-center mb-4">
+              <ListChecks className="size-10 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">Guided Cooking</h3>
+            <p className="text-sm text-muted-foreground">
+              Follow along step-by-step with ingredient checklists and clear
+              instructions as you cook.
+            </p>
+          </div>
+          <div className="space-y-3 p-6 rounded-lg border bg-card text-center">
+            <div className="flex justify-center mb-4">
+              <Utensils className="size-10 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">Cook History</h3>
+            <p className="text-sm text-muted-foreground">
+              Track when you last made each recipe and keep notes on your
+              personal tweaks.
+            </p>
           </div>
         </div>
       </section>
@@ -55,31 +92,29 @@ function App() {
       <section className="py-16 px-6 max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           <div className="space-y-3 p-6 rounded-lg border bg-card">
-            <div className="text-4xl font-bold text-primary">0</div>
+            <div className="flex justify-center mb-2">
+              <Clock className="size-6 text-primary" />
+            </div>
             <div className="text-sm text-muted-foreground">
-              Original Recipes
+              Save time with instant recipe imports
             </div>
           </div>
           <div className="space-y-3 p-6 rounded-lg border bg-card">
-            <div className="text-4xl font-bold text-primary">∞</div>
+            <div className="flex justify-center mb-2">
+              <BookOpen className="size-6 text-primary" />
+            </div>
             <div className="text-sm text-muted-foreground">
-              Shamelessly Borrowed
+              All your recipes in one place
             </div>
           </div>
           <div className="space-y-3 p-6 rounded-lg border bg-card">
-            <div className="text-4xl font-bold text-primary">100%</div>
+            <div className="flex justify-center mb-2">
+              <ChefHat className="size-6 text-primary" />
+            </div>
             <div className="text-sm text-muted-foreground">
-              Delicious Either Way
+              Cook with confidence, every time
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 p-6 rounded-lg border bg-muted/50 text-center">
-          <p className="text-sm text-muted-foreground italic">
-            "If you're good at something, never do it for free. But if you're
-            bad at remembering recipes, definitely store them somewhere." - Mr.
-            Weaver, probably
-          </p>
         </div>
       </section>
     </div>

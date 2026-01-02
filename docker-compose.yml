@@ -41,7 +41,7 @@ services:
       # DATABASE_URL points to a file inside the mounted volume
       # This ensures data persists even if the container is rebuilt
       - DATABASE_URL=/app/data/cookbook.db
-      # OpenAI API key for the recipe stealing feature
+      # OpenAI API key for the recipe import feature
       - OPENAI_API_KEY=${OPENAI_API_KEY}
 
     # Volume mounts for data persistence

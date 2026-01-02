@@ -180,7 +180,7 @@ function RouteComponent() {
           Digest Recipe
         </h1>
         <p className="text-muted-foreground mt-3 text-lg">
-          Transform stolen data into your personal collection
+          Transform recipe data into your personal collection
         </p>
       </div>
 

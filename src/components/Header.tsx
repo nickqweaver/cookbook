@@ -28,7 +28,7 @@ export default function Header() {
           </button>
           <Link to="/" className="flex items-center gap-2">
             <ChefHat className="size-7" />
-            <span className="text-lg font-bold">Stolen Flavors</span>
+            <span className="text-lg font-bold">CookWeave</span>
           </Link>
           <div className="w-10" />
         </div>
@@ -93,7 +93,7 @@ export default function Header() {
           <div className="my-4 border-t" />
 
           <Link
-            to="/recipes/steal"
+            to="/recipes/import"
             onClick={() => setIsOpen(false)}
             className="mb-2 flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent"
             activeProps={{
@@ -102,7 +102,7 @@ export default function Header() {
             }}
           >
             <Sparkles size={20} />
-            <span className="font-medium">Steal Recipe</span>
+            <span className="font-medium">Import Recipe</span>
           </Link>
 
           <Link
