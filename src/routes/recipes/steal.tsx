@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { AlertCircle, ArrowRight, Check, Copy, Loader2, X } from 'lucide-react'
 import { useState } from 'react'
@@ -30,6 +30,8 @@ const recipeSchema = z.object({
     z.object({
       order: z.number(),
       content: z.string(),
+      // Array of ingredient indices (0-based) used in this instruction step
+      ingredientIndices: z.array(z.number()).optional(),
     }),
   ),
 })
@@ -71,7 +73,8 @@ const extractRecipeWithAI = createServerFn({ method: 'POST' })
       const { openai } = await import('@ai-sdk/openai')
       const { generateObject } = await import('ai')
       const { db } = await import('@/db')
-      const { recipe, ingredient, instruction } = await import('@/db/schema')
+      const { recipe, ingredient, instruction, instructionIngredient } =
+        await import('@/db/schema')
 
       // Fetch and convert HTML to markdown
       const { NodeHtmlMarkdown } = await import('node-html-markdown')
@@ -86,7 +89,6 @@ const extractRecipeWithAI = createServerFn({ method: 'POST' })
         ignore: ['script', 'style', 'iframe', 'noscript'],
       })
 
-      const aiStart = performance.now()
       // Extract recipe with AI
       const result = await generateObject({
         model: openai('gpt-4o-mini'),
@@ -106,7 +108,9 @@ Extract:
 - cooktime (number in minutes, required)
 - notes (string or null, optional)
 - ingredients array with: name, amount (number), unit (string)
-- instructions array with: order (number starting from 1), content (string)
+- instructions array with: order (number starting from 1), content (string), ingredientIndices (array of 0-based indices into the ingredients array for ingredients used in this step)
+
+For each instruction step, analyze which ingredients from the ingredients array are used in that step and include their indices (0-based) in the ingredientIndices array. An ingredient may be used in multiple steps. If a step doesn't use specific ingredients (like "preheat oven"), use an empty array.
 
 If the page doesn't contain a valid recipe, return an error.`,
       })
@@ -124,24 +128,58 @@ If the page doesn't contain a valid recipe, return an error.`,
         })
         .returning()
 
-      // Insert ingredients
-      await db.insert(ingredient).values(
-        result.object.ingredients.map((ing) => ({
-          name: ing.name,
-          amount: ing.amount,
-          unit: ing.unit,
-          recipe: newRecipe.id,
-        })),
-      )
+      // Insert ingredients and get their IDs
+      const insertedIngredients = await db
+        .insert(ingredient)
+        .values(
+          result.object.ingredients.map((ing) => ({
+            name: ing.name,
+            amount: ing.amount,
+            unit: ing.unit,
+            recipe: newRecipe.id,
+          })),
+        )
+        .returning()
 
-      // Insert instructions
-      await db.insert(instruction).values(
-        result.object.instructions.map((inst) => ({
-          order: inst.order,
-          content: inst.content,
-          recipe: newRecipe.id,
-        })),
-      )
+      // Insert instructions and get their IDs
+      const insertedInstructions = await db
+        .insert(instruction)
+        .values(
+          result.object.instructions.map((inst) => ({
+            order: inst.order,
+            content: inst.content,
+            recipe: newRecipe.id,
+          })),
+        )
+        .returning()
+
+      // Insert instruction-ingredient mappings
+      const mappingsToInsert: Array<{
+        instruction: number
+        ingredient: number
+      }> = []
+
+      for (let i = 0; i < result.object.instructions.length; i++) {
+        const inst = result.object.instructions[i]
+        const insertedInst = insertedInstructions[i]
+        const indices = inst.ingredientIndices ?? []
+
+        for (const ingredientIndex of indices) {
+          if (
+            ingredientIndex >= 0 &&
+            ingredientIndex < insertedIngredients.length
+          ) {
+            mappingsToInsert.push({
+              instruction: insertedInst.id,
+              ingredient: insertedIngredients[ingredientIndex].id,
+            })
+          }
+        }
+      }
+
+      if (mappingsToInsert.length > 0) {
+        await db.insert(instructionIngredient).values(mappingsToInsert)
+      }
 
       return { success: true, recipeId: newRecipe.id }
     } catch (error) {

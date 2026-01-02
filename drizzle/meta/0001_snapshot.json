@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c48573c2-14c5-43fa-8dd3-c6c6cd3e3b10",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "88aeae86-acf2-4764-aab1-046397cd2fd9",
+  "prevId": "c48573c2-14c5-43fa-8dd3-c6c6cd3e3b10",
   "tables": {
     "cook": {
       "name": "cook",
@@ -21,6 +21,29 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(unixepoch())"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'in_progress'"
+        },
+        "current_step": {
+          "name": "current_step",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
         },
         "created_by": {
           "name": "created_by",
@@ -272,6 +295,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "ingredient_ids": {
+          "name": "ingredient_ids",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },

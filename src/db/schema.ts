@@ -48,6 +48,11 @@ export const cook = sqliteTable('cook', {
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`(unixepoch())`)
     .notNull(),
+  endedAt: integer('ended_at', { mode: 'timestamp' }),
+  status: text('status', { enum: ['in_progress', 'completed', 'cancelled'] })
+    .default('in_progress')
+    .notNull(),
+  currentStep: integer('current_step', { mode: 'number' }).default(1).notNull(),
   createdBy: text('created_by'),
   recipe: integer('recipe')
     .references(() => recipe.id, {
@@ -91,9 +96,33 @@ export const cookIngredient = sqliteTable(
   (t) => [unique().on(t.cook, t.ingredient)],
 )
 
+// Junction table for instruction-to-ingredient mapping
+export const instructionIngredient = sqliteTable(
+  'instruction_ingredient',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    instruction: integer('instruction')
+      .references(() => instruction.id, { onDelete: 'cascade' })
+      .notNull(),
+    ingredient: integer('ingredient')
+      .references(() => ingredient.id, { onDelete: 'cascade' })
+      .notNull(),
+  },
+  (t) => [unique().on(t.instruction, t.ingredient)],
+)
+
 export type RecipeInput = typeof recipe.$inferInsert
 export type Recipe = typeof recipe.$inferSelect
 export type IngredientInput = typeof ingredient.$inferInsert
 export type Ingredient = typeof ingredient.$inferSelect
 export type InstructionInput = typeof instruction.$inferInsert
 export type Instruction = typeof instruction.$inferSelect
+export type CookInput = typeof cook.$inferInsert
+export type Cook = typeof cook.$inferSelect
+export type CookIngredientInput = typeof cookIngredient.$inferInsert
+export type CookIngredient = typeof cookIngredient.$inferSelect
+export type CookInstructionInput = typeof cookInstruction.$inferInsert
+export type CookInstruction = typeof cookInstruction.$inferSelect
+export type InstructionIngredientInput =
+  typeof instructionIngredient.$inferInsert
+export type InstructionIngredient = typeof instructionIngredient.$inferSelect

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { useForm } from '@tanstack/react-form'
-import { eq } from 'drizzle-orm'
-import { Calendar, ChefHat, Clock, Pencil, Users, X, Check } from 'lucide-react'
+import { desc, eq } from 'drizzle-orm'
+import { Calendar, Check, ChefHat, Clock, Pencil, Users, X } from 'lucide-react'
 import { Ingredients } from './_ingredients/ingredients'
 import { Instructions } from './_instructions/instructions'
+import { CookStartButton } from './_cook-history/cook-start-button'
+import { CookHistoryList } from './_cook-history/cook-history-list'
 import type {
   Ingredient,
   Instruction,
@@ -13,7 +15,7 @@ import type {
   Recipe,
 } from '@/db/schema'
 import { db } from '@/db'
-import { ingredient, instruction, recipe } from '@/db/schema'
+import { cook, ingredient, instruction, recipe } from '@/db/schema'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -138,9 +140,55 @@ const updateRecipeNotes = createServerFn({ method: 'POST' })
     }
   })
 
+// TODO:
+/**
+ *
+ * 3. The UI for cook is trash, way too many buttons
+ *
+ * 5. Unrelated but add playwright maybe?
+ *
+ **/
+const getCookHistory = createServerFn({ method: 'GET' })
+  .inputValidator((recipeId: number) => recipeId)
+  .handler(async ({ data: recipeId }) => {
+    try {
+      const cooks = await db
+        .select()
+        .from(cook)
+        .where(eq(cook.recipe, recipeId))
+        .orderBy(desc(cook.createdAt))
+        .limit(10) // TODO: Add Pagination here
+
+      return {
+        success: true,
+        data: cooks,
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Failed to get cook history',
+      }
+    }
+  })
+
 export const Route = createFileRoute('/recipes/$id')({
   component: RouteComponent,
-  loader: async (args) => await getRecipe({ data: args.params.id }),
+  loader: async (args) => {
+    const recipeData = await getRecipe({ data: args.params.id })
+    if (!recipeData.success) {
+      return recipeData
+    }
+
+    const cookHistoryData = await getCookHistory({
+      data: recipeData.data.recipe.id,
+    })
+
+    return {
+      ...recipeData,
+      cookHistory: cookHistoryData.success ? cookHistoryData.data : [],
+    }
+  },
 })
 
 type RecipeHeaderProps = {
@@ -301,9 +349,18 @@ function RouteComponent() {
   }
 
   const { recipe, ingredients, instructions } = data.data
+  const cookHistory = data.cookHistory
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8 flex justify-end">
+        <CookStartButton
+          recipeId={recipe.id}
+          ingredients={ingredients}
+          instructions={instructions}
+        />
+      </div>
+
       <RecipeHeader recipe={recipe} />
       <Ingredients ingredients={ingredients} recipeId={recipe.id} />
       <Instructions
@@ -311,6 +368,7 @@ function RouteComponent() {
         recipeId={recipe.id}
         addInstructionFn={addIns}
       />
+      <CookHistoryList cooks={cookHistory} recipeId={recipe.id} />
     </div>
   )
 }

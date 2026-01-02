@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
 type MutationOptions<TData> = {
-  onSuccess?: (data: TData) => void
+  onSuccess?: (data: Awaited<TData>) => void
   onError?: (err: string) => void
 }
 type Mutation<TData, TVariables> = (

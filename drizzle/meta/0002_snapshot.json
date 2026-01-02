@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c48573c2-14c5-43fa-8dd3-c6c6cd3e3b10",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "abaf1967-6627-411a-9498-f02fce5823e2",
+  "prevId": "88aeae86-acf2-4764-aab1-046397cd2fd9",
   "tables": {
     "cook": {
       "name": "cook",
@@ -21,6 +21,29 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(unixepoch())"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'in_progress'"
+        },
+        "current_step": {
+          "name": "current_step",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
         },
         "created_by": {
           "name": "created_by",
@@ -50,8 +73,12 @@
           "name": "cook_recipe_recipe_id_fk",
           "tableFrom": "cook",
           "tableTo": "recipe",
-          "columnsFrom": ["recipe"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recipe"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -96,7 +123,10 @@
       "indexes": {
         "cook_ingredient_cook_ingredient_unique": {
           "name": "cook_ingredient_cook_ingredient_unique",
-          "columns": ["cook", "ingredient"],
+          "columns": [
+            "cook",
+            "ingredient"
+          ],
           "isUnique": true
         }
       },
@@ -105,8 +135,12 @@
           "name": "cook_ingredient_cook_cook_id_fk",
           "tableFrom": "cook_ingredient",
           "tableTo": "cook",
-          "columnsFrom": ["cook"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "cook"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -114,8 +148,12 @@
           "name": "cook_ingredient_ingredient_ingredient_id_fk",
           "tableFrom": "cook_ingredient",
           "tableTo": "ingredient",
-          "columnsFrom": ["ingredient"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "ingredient"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -160,7 +198,10 @@
       "indexes": {
         "cook_instruction_cook_instruction_unique": {
           "name": "cook_instruction_cook_instruction_unique",
-          "columns": ["cook", "instruction"],
+          "columns": [
+            "cook",
+            "instruction"
+          ],
           "isUnique": true
         }
       },
@@ -169,8 +210,12 @@
           "name": "cook_instruction_cook_cook_id_fk",
           "tableFrom": "cook_instruction",
           "tableTo": "cook",
-          "columnsFrom": ["cook"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "cook"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -178,8 +223,12 @@
           "name": "cook_instruction_instruction_instruction_id_fk",
           "tableFrom": "cook_instruction",
           "tableTo": "instruction",
-          "columnsFrom": ["instruction"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "instruction"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -233,8 +282,12 @@
           "name": "ingredient_recipe_recipe_id_fk",
           "tableFrom": "ingredient",
           "tableTo": "recipe",
-          "columnsFrom": ["recipe"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recipe"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -278,7 +331,10 @@
       "indexes": {
         "instruction_order_recipe_unique": {
           "name": "instruction_order_recipe_unique",
-          "columns": ["order", "recipe"],
+          "columns": [
+            "order",
+            "recipe"
+          ],
           "isUnique": true
         }
       },
@@ -287,8 +343,79 @@
           "name": "instruction_recipe_recipe_id_fk",
           "tableFrom": "instruction",
           "tableTo": "recipe",
-          "columnsFrom": ["recipe"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recipe"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "instruction_ingredient": {
+      "name": "instruction_ingredient",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "instruction": {
+          "name": "instruction",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ingredient": {
+          "name": "ingredient",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "instruction_ingredient_instruction_ingredient_unique": {
+          "name": "instruction_ingredient_instruction_ingredient_unique",
+          "columns": [
+            "instruction",
+            "ingredient"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "instruction_ingredient_instruction_instruction_id_fk": {
+          "name": "instruction_ingredient_instruction_instruction_id_fk",
+          "tableFrom": "instruction_ingredient",
+          "tableTo": "instruction",
+          "columnsFrom": [
+            "instruction"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "instruction_ingredient_ingredient_ingredient_id_fk": {
+          "name": "instruction_ingredient_ingredient_ingredient_id_fk",
+          "tableFrom": "instruction_ingredient",
+          "tableTo": "ingredient",
+          "columnsFrom": [
+            "ingredient"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -362,7 +489,9 @@
       "indexes": {
         "recipe_title_unique": {
           "name": "recipe_title_unique",
-          "columns": ["title"],
+          "columns": [
+            "title"
+          ],
           "isUnique": true
         }
       },
