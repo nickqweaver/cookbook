@@ -1,19 +1,44 @@
 import { Link } from '@tanstack/react-router'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BookOpen,
   ChefHat,
   Home,
   Menu,
+  Moon,
   Plus,
   Sparkles,
+  Sun,
   Utensils,
   X,
 } from 'lucide-react'
 
+function useTheme() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const stored = localStorage.getItem('theme')
+    if (stored) return stored === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (isDark) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [isDark])
+
+  return [isDark, setIsDark] as const
+}
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isDark, setIsDark] = useTheme()
 
   return (
     <>
@@ -27,10 +52,16 @@ export default function Header() {
             <Menu size={24} />
           </button>
           <Link to="/" className="flex items-center gap-2">
-            <ChefHat className="size-7" />
+            <ChefHat className="size-7 text-primary" />
             <span className="text-lg font-bold">CookWeave</span>
           </Link>
-          <div className="w-10" />
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className="rounded-lg p-2 transition-colors hover:bg-accent"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
         </div>
       </header>
 
