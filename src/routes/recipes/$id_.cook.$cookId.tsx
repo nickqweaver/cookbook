@@ -149,23 +149,38 @@ function CookComponent() {
   const router = useRouter()
   const { id: recipeId } = Route.useParams()
 
-  const [phase, setPhase] = useState<CookPhase>('ingredients')
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
-
-  // Initialize phase based on cook state
-  useEffect(() => {
-    if (!data.success) return
+  // Compute initial state from loader data
+  const getInitialState = () => {
+    if (!data.success)
+      return { phase: 'ingredients' as CookPhase, stepIndex: 0 }
 
     const { cook: cookData, ingredients } = data.data
     const allIngredientsChecked = ingredients.every((ing) => ing.checked)
 
     if (cookData.status === 'completed') {
-      setPhase('completed')
+      return { phase: 'completed' as CookPhase, stepIndex: 0 }
     } else if (allIngredientsChecked) {
-      setPhase('cooking')
-      setCurrentStepIndex(cookData.currentStep - 1)
+      return {
+        phase: 'cooking' as CookPhase,
+        stepIndex: cookData.currentStep - 1,
+      }
     } else {
-      setPhase('ingredients')
+      return { phase: 'ingredients' as CookPhase, stepIndex: 0 }
+    }
+  }
+
+  const [phase, setPhase] = useState<CookPhase>(getInitialState().phase)
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    getInitialState().stepIndex,
+  )
+
+  // Only update phase when cook status changes to completed
+  useEffect(() => {
+    if (!data.success) return
+
+    const { cook: cookData } = data.data
+    if (cookData.status === 'completed') {
+      setPhase('completed')
     }
   }, [data])
 

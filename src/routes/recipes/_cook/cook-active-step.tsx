@@ -1,7 +1,14 @@
 import { useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { and, eq } from 'drizzle-orm'
-import { Check, CheckCircle2, ChevronLeft, Loader2, X } from 'lucide-react'
+import {
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RotateCcw,
+} from 'lucide-react'
 import type * as DbTypes from '@/db/schema'
 import { db } from '@/db'
 import { cook, cookInstruction } from '@/db/schema'
@@ -119,22 +126,43 @@ export function CookActiveStep({
   }
 
   const handleStepComplete = async () => {
-    await handleInstructionToggle(currentInstruction.id, true, currentStepIndex)
+    const isLastStep = currentStepIndex === instructions.length - 1
+    const nextStepIndex = currentStepIndex + 1
 
-    if (currentStepIndex === instructions.length - 1) {
-      // Last step - complete the cook
-      await complete(
-        { data: { cookId } },
-        {
-          onSuccess: () => {
-            router.invalidate()
-            onComplete()
-          },
-        },
-      )
-    } else {
-      onStepChange(currentStepIndex + 1)
+    // Move to next step first (before invalidation resets state)
+    if (!isLastStep) {
+      onStepChange(nextStepIndex)
     }
+
+    // Update the instruction as checked
+    await updateInstruction(
+      {
+        data: {
+          cookId,
+          instructionId: currentInstruction.id,
+          checked: true,
+          currentStep: nextStepIndex,
+        },
+      },
+      {
+        onSuccess: async () => {
+          if (isLastStep) {
+            // Last step - complete the cook
+            await complete(
+              { data: { cookId } },
+              {
+                onSuccess: () => {
+                  router.invalidate()
+                  onComplete()
+                },
+              },
+            )
+          } else {
+            router.invalidate()
+          }
+        },
+      },
+    )
   }
 
   const handleStepIncomplete = async () => {
@@ -157,12 +185,13 @@ export function CookActiveStep({
           {currentInstruction.checked && (
             <button
               onClick={handleStepIncomplete}
-              className="text-green-500 hover:text-red-500 flex items-center gap-1 text-sm font-normal transition-colors"
+              className="text-muted-foreground hover:text-destructive flex items-center gap-1.5 text-sm font-normal transition-colors group"
               title="Mark as incomplete"
             >
-              <CheckCircle2 className="size-4" />
-              Completed
-              <X className="size-3 ml-1" />
+              <CheckCircle2 className="size-4 text-green-500" />
+              <span className="group-hover:hidden">Completed</span>
+              <span className="hidden group-hover:inline">Undo</span>
+              <RotateCcw className="size-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           )}
         </CardTitle>
@@ -199,21 +228,42 @@ export function CookActiveStep({
             Previous
           </Button>
 
-          <Button
-            size="lg"
-            onClick={handleStepComplete}
-            disabled={isCompleting || currentInstruction.checked}
-            className="px-8"
-          >
-            {isCompleting ? (
-              <Loader2 className="size-5 animate-spin mr-2" />
+          {currentInstruction.checked ? (
+            // Step already completed - show Next button to advance
+            currentStepIndex < instructions.length - 1 ? (
+              <Button
+                size="lg"
+                onClick={() => onStepChange(currentStepIndex + 1)}
+                className="px-8"
+              >
+                Next
+                <ChevronRight className="size-5 ml-1" />
+              </Button>
             ) : (
-              <Check className="size-5 mr-2" />
-            )}
-            {currentStepIndex === instructions.length - 1
-              ? 'Finish Cooking'
-              : 'Complete'}
-          </Button>
+              // Last step already completed - show disabled state
+              <Button size="lg" disabled className="px-8">
+                <Check className="size-5 mr-2" />
+                Done
+              </Button>
+            )
+          ) : (
+            // Step not completed - complete and advance
+            <Button
+              size="lg"
+              onClick={handleStepComplete}
+              disabled={isCompleting}
+              className="px-8"
+            >
+              {isCompleting ? (
+                <Loader2 className="size-5 animate-spin mr-2" />
+              ) : (
+                <Check className="size-5 mr-2" />
+              )}
+              {currentStepIndex === instructions.length - 1
+                ? 'Finish Cooking'
+                : 'Complete & Next'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
